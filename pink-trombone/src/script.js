@@ -22,7 +22,27 @@ pinkTromboneElement.addEventListener("load", (event) => {
 
       pinkTromboneElement.pinkTrombone._pinkTromboneNode.connect(audioContext.destination);
     } else {
-      pinkTromboneElement.connect(pinkTromboneElement.audioContext.destination);
+      const splitter = audioContext.createChannelSplitter(2);
+
+      // Nodo principal de salida
+      const mainOutput = audioContext.createGain();
+
+      // Nodo para grabación
+      const recordingOutput = audioContext.createGain();
+
+      // Conexiones:
+      pinkTromboneElement.pinkTrombone._pinkTromboneNode
+          .connect(splitter)
+          .connect(audioContext.destination);  // Altavoces
+
+      splitter.connect(recordingOutput);
+      pinkTromboneElement.recordingOutput = recordingOutput;
+
+      // Configurar MediaStreamDestination una sola vez
+      mediaStreamDest = audioContext.createMediaStreamDestination();
+      pinkTromboneElement.recordingOutput.connect(mediaStreamDest);
+      mediaRecorder = new MediaRecorder(mediaStreamDest.stream);
+
     }
     pinkTromboneElement.start();
     frontConstriction = pinkTromboneElement.newConstriction(43, 1.8);
@@ -145,7 +165,6 @@ const updateConstriction = throttle(() => {
     }
   }
   message.voiceness = _voiceness;
-  send(message);
 }, 100);
 
 let _voiceness = 0.7;
@@ -317,7 +336,9 @@ const { send } = setupConnection("pink-trombone", (message) => {
           keyframes = utterances[value].keyframes;
         }
         if (keyframes && keyframes.length > 0) {
-          playKeyframes(keyframes);
+          startRecording();
+          const duration = playKeyframes(keyframes);
+          setTimeout(() => stopRecordingAndSend(), duration * 1000)
         }
         break;
       default:
@@ -339,6 +360,37 @@ const { send } = setupConnection("pink-trombone", (message) => {
     }
   }
 });
+
+
+function startRecording() {
+  if (mediaRecorder.state === 'recording') return;
+
+  audioChunks = [];
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorder.start();
+}
+
+function stopRecordingAndSend() {
+  return new Promise(resolve => {
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const buffer = await blob.arrayBuffer();
+
+      // Enviar a través de BroadcastChannel
+      send({
+        to: ["lexi"],
+        type: "waveform",
+        data: buffer
+      });
+
+      resolve();
+    };
+
+    if (mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
+  });
+}
 
 function sendConstrictions() {
   const message = {
@@ -384,6 +436,7 @@ const keyframeStrings = [
 ];
 
 function playKeyframes(keyframes) {
+  let maxTime = 0;
   keyframes.forEach((keyframe) => {
     keyframeStrings.forEach((keyframeString) => {
       let value = keyframe[keyframeString];
@@ -401,8 +454,10 @@ function playKeyframes(keyframes) {
       }
       const offset = keyframe.time;
       node.linearRampToValueAtTime(value, pinkTromboneElement.audioContext.currentTime + offset);
+      maxTime = Math.max(maxTime, offset)
     });
   });
+  return maxTime
 }
 
 const darkModeButton = document.getElementById("darkMode");

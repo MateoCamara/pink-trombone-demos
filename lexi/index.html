@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lexi View</title>
+    <script src="/src/utils.js"></script>
+
+
+    <style>
+        .container {
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 20px;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <canvas id="waveform" width="1200" height="150"></canvas>
+    <canvas id="spectrogram" width="1200" height="300"></canvas>
+</div>
+<script src="/lexi/src/script.js"></script>
+</body>
+</html>
