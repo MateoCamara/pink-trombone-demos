@@ -3,12 +3,10 @@
 <head>
     <title>Lexi View</title>
     <script src="/src/utils.js"></script>
-
-
     <style>
         .container {
             display: grid;
-            grid-template-rows: auto auto;
+            grid-template-rows: auto auto auto; /* Nueva fila para fonemas */
             gap: 20px;
             padding: 20px;
         }
@@ -16,12 +14,132 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        #phonemes-container {
+            height: 60px;
+            position: relative;
+            margin-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .phoneme-label {
+            position: absolute;
+            bottom: 5px;
+            transform: none; /* Eliminamos el centrado */
+            white-space: nowrap;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            padding-left: 8px; /* Espacio después de la barra */
+            border-left: 3px solid #FF6B6B;
+            height: 15px;
+            pointer-events: none;
+        }
+
+        .phoneme-label::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -3px;
+            width: 3px;
+            height: 20px;
+            background: #FF6B6B;
+            opacity: 0.3;
+        }
+
+        /* Para fonemas principales */
+        .phoneme-label.main {
+            border-left-color: #4ECDC4;
+            font-weight: bold;
+        }
+
+        .phoneme-label.main::after {
+            background: #4ECDC4;
+        }
+        #landmarks-container {
+            height: 60px;
+            position: relative;
+            margin: 20px 0;
+            border-top: 2px solid #eee;
+        }
+
+        .landmark {
+            position: absolute;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateX(-50%);
+        }
+
+        .landmark-bar {
+            width: 3px;
+            height: 25px;
+        }
+
+        .landmark-range {
+            height: 4px;
+            top: 15px;
+        }
+
+        .landmark-label {
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 2px;
+            color: #fff;
+            padding: 1px 3px;
+            border-radius: 2px;
+            position: absolute;
+            top: 30px;
+        }
+
+        /* Colores y categorías */
+        .V .landmark-bar { background: #FF6B6B; }
+        .V .landmark-label { background: #FF6B6B; }
+
+        .G .landmark-bar { background: #4ECDC4; }
+        .G .landmark-label { background: #4ECDC4; }
+
+        .N .landmark-bar { background: #96CEB4; }
+        .N .landmark-label { background: #96CEB4; }
+
+        .F .landmark-bar { background: #FFEEAD; }
+        .F .landmark-label { color: #333; background: #FFEEAD; }
+
+        .S .landmark-bar { background: #45B7D1; }
+        .S .landmark-label { background: #45B7D1; }
+
+        /* Especiales para stop/release */
+        .Nc .landmark-bar { background: #1c50d3; }
+        .Nr .landmark-bar { background: #80a0ff; }
+        .Sc .landmark-bar { background: #ec00ff; }
+        .Sr .landmark-bar { background: #f9afff; }
+        .Fc .landmark-bar { background: #ffd900; }
+        .Fr .landmark-bar { background: #fff4c3; }
+
+        .Nc .landmark-label { background: #1c50d3; }
+        .Nr .landmark-label { background: #80a0ff; }
+        .Sc .landmark-label { background: #ec00ff; }
+        .Sr .landmark-label { background: #f9afff; }
+        .Fc .landmark-label { background: #ffd900; }
+        .Fr .landmark-label { background: #fff4c3; }
+
+        /* Añadir al CSS */
+        .A .landmark-bar { background: #FFA577; }
+        .A .landmark-label { background: #FFA577; }
     </style>
 </head>
 <body>
 <div class="container">
     <canvas id="waveform" width="1200" height="150"></canvas>
     <canvas id="spectrogram" width="1200" height="300"></canvas>
+    <div id="phonemes-container">
+        <div id="phonemes"></div>
+    </div>
+    <!-- Agrega esto después del contenedor de fonemas -->
+    <div id="landmarks-container">
+        <div id="landmarks"></div>
+    </div>
 </div>
 <script src="/lexi/src/script.js"></script>
 </body>

@@ -631,7 +631,7 @@ const clearResultContainers = () => {
 
 const throttledSend = throttle((message) => {
   send({
-    to: ["pink-trombone", "lip-sync"],
+    to: ["pink-trombone", "lip-sync", "lexi"],
     type: "message",
     ...message,
   });
