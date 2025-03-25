@@ -3,12 +3,25 @@ const spectrogramCanvas = document.getElementById('spectrogram');
 const ctx = canvas.getContext('2d');
 const spectrogramCtx = spectrogramCanvas.getContext('2d');
 let audioContext;
+let phonemeData = null; // Variable para almacenar los fonemas
 
 const { onMessage } = setupConnection("lexi", handleMessage);
 
+const LANDMARK_MAP = {
+    'V': ['i', 'ɛ', 'ɪ', 'æ', 'ʊ', 'u', 'ɔ', 'ɑ', 'ʌ', 'ɚ', 'o'],
+    'G': ['w', 'y', 'l', 'ɹ', 'h'],
+    'N': ['m', 'n', 'ŋ'],
+    'F': ['v', 'ð', 'z', 'ʒ', 'f', 'θ', 's', 'ʃ'],
+    'S': ['b', 'd', 'g', 'p', 't', 'k'],
+    'A': ['ʧ', 'ʤ']
+};
+
 async function handleMessage(message) {
+    console.log(message)
     if (message.type === "waveform") {
         renderWaveform(message.data);
+    } else if (message.type === "message") {
+        phonemeData = message.utterance;
     }
 }
 
@@ -21,6 +34,11 @@ async function renderWaveform(arrayBuffer) {
 
     drawTimeDomain(audioBuffer);
     drawSpectrogram(audioBuffer);
+
+    if (phonemeData) {
+        drawPhonemes(phonemeData, audioBuffer.duration, canvas.width);
+        drawLandmarks(phonemeData, audioBuffer.duration, canvas.width);
+    }
 }
 
 function drawTimeDomain(audioBuffer) {
@@ -53,6 +71,196 @@ function drawTimeDomain(audioBuffer) {
     ctx.stroke();
 }
 
+function drawPhonemes(phonemeData, audioDuration, canvasWidth) {
+    const container = document.getElementById('phonemes');
+    container.innerHTML = '';
+
+    if (!phonemeData?.keyframes) return;
+
+    // Ordenar por tiempo por si acaso
+    const sortedKeyframes = [...phonemeData.keyframes].sort((a, b) => a.time - b.time);
+
+    // Agrupar fonemas cercanos para evitar solapamiento
+    let lastPosition = -Infinity;
+
+    sortedKeyframes.forEach(keyframe => {
+        const time = keyframe.time;
+        const position = Math.round((time / audioDuration) * canvasWidth);
+
+        const label = document.createElement('div');
+        label.className = 'phoneme-label';
+
+        // Clasificar fonemas principales
+        const isMain = !keyframe.isSubPhoneme && !/[\]}]/.test(keyframe.name);
+        if (isMain) label.classList.add('main');
+
+        // Limpiar nombre
+        const cleanName = keyframe.name
+            .replace(/[\[\]{}()0-9]/g, '') // Elimina todos los símbolos y números
+            .trim();
+
+        // Posicionamiento inteligente
+        label.style.left = `${position}px`;
+        label.textContent = cleanName;
+
+        // Evitar solapamiento (alternar posición vertical)
+        if (Math.abs(position - lastPosition) < 50) { // 50px mínimo entre etiquetas
+            label.style.top = '-20px';
+            label.style.bottom = 'auto';
+        }
+
+        // Truncar textos largos
+        if (cleanName.length > 4) {
+            label.textContent = cleanName.substring(0, 4) + '…';
+            label.title = cleanName;
+        }
+
+        container.appendChild(label);
+        lastPosition = position;
+    });
+}
+
+function cleanPhoneme(phoneme) {
+    return phoneme.toLowerCase().replace(/[^a-zɪæʊuɔɑʌɚɹŋðʒθɛʃʧʤ]/g, '');
+}
+
+function parsePhonemeName(name) {
+    let leadingBrace = name.startsWith('{');
+    let remaining = leadingBrace ? name.slice(1) : name;
+
+    let subphoneme = null;
+    const subMatch = remaining.match(/\((\d+)\)/);
+    if (subMatch) {
+        subphoneme = parseInt(subMatch[1], 10);
+        remaining = remaining.replace(/\(\d+\)/, '');
+    }
+
+    const baseMatch = remaining.match(/^[a-zɛɪæʊuɔɑʌɚɹŋðʒθʃʧʤ]+/i);
+    let base = baseMatch ? baseMatch[0].toLowerCase() : '';
+    remaining = remaining.slice(base.length);
+
+    const trailingEnd = remaining.includes('}');
+    const trailingClosure = remaining.includes(']');
+
+    return { base, subphoneme, leadingBrace, trailingEnd, trailingClosure };
+}
+
+function getLandmarkType(basePhoneme) {
+    const cleaned = cleanPhoneme(basePhoneme);
+    const exactMatch = Object.entries(LANDMARK_MAP).find(([_, phs]) =>
+        phs.includes(cleaned)
+    );
+    if (exactMatch) return exactMatch[0];
+    return null;
+}
+
+function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
+    const container = document.getElementById('landmarks');
+    container.innerHTML = '';
+
+    const groups = [];
+    let currentGroup = null;
+
+    phonemeData.keyframes.forEach(kf => {
+        if (kf.name === '.') return;
+
+        const parsed = parsePhonemeName(kf.name);
+        const baseType = getLandmarkType(parsed.base);
+        if (!baseType) return;
+
+        let groupKey;
+        if (['S', 'F', 'N'].includes(baseType)) {
+            groupKey = `${baseType}-${parsed.base}`;
+        } else if (baseType === 'G') {
+            groupKey = `G-${parsed.base}`;
+        } else {
+            groupKey = `single-${kf.time}`;
+        }
+
+        if (!currentGroup || currentGroup.key !== groupKey) {
+            currentGroup = {
+                key: groupKey,
+                type: baseType,
+                elements: [],
+                parsed: []
+            };
+            groups.push(currentGroup);
+        }
+
+        currentGroup.elements.push(kf);
+        currentGroup.parsed.push(parsed);
+        if (parsed.leadingBrace) currentGroup.hasLeadingBrace = true;
+    });
+
+    groups.forEach(group => {
+        const type = group.type;
+        const elements = group.elements;
+        const parsed = group.parsed;
+
+        if (type === 'V') {
+            elements.forEach(kf => createLandmark(kf.time, 'V', kf.name));
+        } else if (type === 'G') {
+            const start = elements[0].time;
+            const end = elements[elements.length - 1].time;
+            const mid = (start + end) / 2;
+            createLandmark(mid, 'G', elements[0].name);
+        } else if (['S', 'F', 'N'].includes(type)) {
+            // Encontrar closure
+            // let closureIdx = parsed.findIndex(p => p.leadingBrace);
+            // if (closureIdx === -1) closureIdx = 0;
+            const closureIdx = 0;
+            const closureTime = elements[closureIdx].time;
+            createLandmark(closureTime, `${type}c`, elements[closureIdx].name);
+
+            if (type === 'S') {
+                // Buscar el primer subphonema 1
+                const splitIndex = parsed.findIndex(p => p.subphoneme === 1);
+
+                if (splitIndex > 0) {
+                    // Calcular punto medio entre último 0 y primer 1
+                    const last0 = elements[splitIndex - 1].time;
+                    const first1 = elements[splitIndex].time;
+                    const releaseTime = (last0 + first1) / 2;
+
+                    createLandmark(releaseTime, `${type}r`, 'transition');
+                } else {
+                    // Fallback: usar último elemento con } o final
+                    const releaseElement = elements.findLast(e =>
+                        parsePhonemeName(e.name).trailingEnd
+                    ) || elements[elements.length - 1];
+
+                    createLandmark(releaseElement.time, `${type}r`, releaseElement.name);
+                }
+            } else {
+                // Lógica original para F y N
+                const releaseElement = elements.findLast(e =>
+                    parsePhonemeName(e.name).trailingEnd
+                ) || elements[elements.length - 1];
+
+                createLandmark(releaseElement.time, `${type}r`, releaseElement.name);
+            }
+        }
+    });
+
+    function createLandmark(time, type, name) {
+        const position = (time / audioDuration) * canvasWidth;
+        const landmark = document.createElement('div');
+        landmark.className = `landmark ${type}`;
+        landmark.style.left = `${position}px`;
+        landmark.title = name;
+
+        const bar = document.createElement('div');
+        bar.className = 'landmark-bar';
+        landmark.appendChild(bar);
+
+        const label = document.createElement('div');
+        label.className = 'landmark-label';
+        label.textContent = type;
+        landmark.appendChild(label);
+
+        container.appendChild(landmark);
+    }
+}
 
 // Implementación FFT Cooley-Tukey (Radix-2)
 class FFT {
