@@ -46,24 +46,36 @@ function drawTimeDomain(audioBuffer) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
 
-    const step = Math.ceil(data.length / canvas.width);
-    let peak = 0.5;
+    // 1. Encontrar el pico máximo absoluto en todo el audio
+    let globalPeak = 0;
+    for (let i = 0; i < data.length; i++) {
+        globalPeak = Math.max(globalPeak, Math.abs(data[i]));
+    }
+    if (globalPeak === 0) globalPeak = 1; // Evitar división por cero
+
+    // 2. Ajustar parámetros de escalado
+    const segmentWidth = data.length / canvas.width;
+    const verticalScale = (canvas.height * 0.95) / (2 * globalPeak); // 5% de margen
 
     for (let x = 0; x < canvas.width; x++) {
-        const start = Math.floor(x * step);
-        const end = Math.floor((x + 1) * step);
-        let max = 0;
+        const start = Math.floor(x * segmentWidth);
+        const end = Math.floor((x + 1) * segmentWidth);
+        let max = -Infinity;
+        let min = Infinity;
 
-        for (let i = start; i < end; i++) {
-            if (data[i] > max) max = data[i];
+        for (let i = start; i < end && i < data.length; i++) {
+            const val = data[i];
+            max = Math.max(max, val);
+            min = Math.min(min, val);
         }
 
-        const y = (1 - max) * canvas.height / 2;
+        // 3. Escalado vertical completo
+        const yCenter = canvas.height / 2;
+        const yMax = yCenter - (max * verticalScale);
+        const yMin = yCenter - (min * verticalScale);
 
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-
-        peak = Math.max(peak, max);
+        ctx.moveTo(x, yMax);
+        ctx.lineTo(x, yMin);
     }
 
     ctx.strokeStyle = '#FF6B6B';
