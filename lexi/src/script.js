@@ -4,6 +4,8 @@ const ctx = canvas.getContext('2d');
 const spectrogramCtx = spectrogramCanvas.getContext('2d');
 let audioContext;
 let phonemeData = null; // Variable para almacenar los fonemas
+let currentAudioBlob = null;
+let audioBuffer = null; // Guardamos el buffer de audio decodificado
 
 const { onMessage } = setupConnection("lexi", handleMessage);
 
@@ -19,6 +21,11 @@ const LANDMARK_MAP = {
 async function handleMessage(message) {
     console.log(message)
     if (message.type === "waveform") {
+        // Guardar el ArrayBuffer original del mensaje
+        const originalArrayBuffer = message.data.slice(0);
+        currentAudioBlob = originalArrayBuffer;
+        
+        // Procesar para visualización
         renderWaveform(message.data);
     } else if (message.type === "message") {
         phonemeData = message.utterance;
@@ -27,7 +34,7 @@ async function handleMessage(message) {
 
 async function renderWaveform(arrayBuffer) {
     audioContext = audioContext || new AudioContext();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
 
     canvas.width = canvas.offsetWidth;  // Asegurar mismo anchi que el contenedor
     spectrogramCanvas.width = canvas.width; // Mismo ancho que el waveform
@@ -426,4 +433,28 @@ function HSLtoRGB(h, s, l) {
         Math.round(b * 255),
         255
     ];
+}
+
+function downloadAudio() {
+    if (!currentAudioBlob) {
+        alert('No hay audio para descargar');
+        return;
+    }
+
+    // Usar el ArrayBuffer original guardado
+    const blob = new Blob([currentAudioBlob], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `audio_${new Date().toISOString().slice(0, 19)}.wav`;
+    document.body.appendChild(a);
+    a.click();
+
+    // Limpieza
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
 }
