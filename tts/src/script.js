@@ -698,6 +698,20 @@ generateRandomPhonemesButton.addEventListener("click", () => {
   phonemesInput.dispatchEvent(new Event("input"));
 });
 
+// Funcionalidad para generar una palabra aleatoria del diccionario
+const generateRandomWordButton = document.getElementById("generateRandomWord");
+generateRandomWordButton.addEventListener("click", () => {
+  // Obtener todas las palabras del diccionario
+  const words = Object.keys(TextToIPA._IPADict);
+  
+  // Seleccionar una palabra aleatoria
+  const randomWord = words[Math.floor(Math.random() * words.length)];
+  
+  // Establecer la palabra en el campo de texto
+  textInput.value = randomWord;
+  textInput.dispatchEvent(new Event("input"));
+});
+
 function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
