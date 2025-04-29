@@ -6,12 +6,13 @@ let audioContext;
 let phonemeData = null; // Variable para almacenar los fonemas
 let currentAudioBlob = null;
 let audioBuffer = null; // Guardamos el buffer de audio decodificado
+let calculatedLandmarks = []; // Store calculated landmarks here
 
 const { onMessage } = setupConnection("lexi", handleMessage);
 
 const LANDMARK_MAP = {
-    'V': ['i', 'ɛ', 'ɪ', 'æ', 'ʊ', 'u', 'ɔ', 'ɑ', 'ʌ', 'ɚ', 'o'],
-    'G': ['w', 'y', 'l', 'ɹ', 'h'],
+    'V': ['i', 'ɛ', 'ɪ', 'æ', 'ʊ', 'u', 'ɔ', 'ɑ', 'ʌ', 'ɚ', 'o', 'a', 'e'],
+    'G': ['w', 'y', 'l', 'ɹ', 'h', 'j'],
     'N': ['m', 'n', 'ŋ'],
     'F': ['v', 'ð', 'z', 'ʒ', 'f', 'θ', 's', 'ʃ'],
     'S': ['b', 'd', 'g', 'p', 't', 'k'],
@@ -177,6 +178,8 @@ function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
     const container = document.getElementById('landmarks');
     container.innerHTML = '';
 
+    calculatedLandmarks = []; // Clear landmarks before recalculating
+
     const groups = [];
     let currentGroup = null;
 
@@ -278,6 +281,9 @@ function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
         landmark.appendChild(label);
 
         container.appendChild(landmark);
+
+        // Store landmark data
+        calculatedLandmarks.push({ type, time, name });
     }
 }
 
@@ -453,6 +459,34 @@ function downloadAudio() {
     a.click();
 
     // Limpieza
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
+
+// Function to download landmarks as JSON
+function downloadLandmarks() {
+    if (!calculatedLandmarks || calculatedLandmarks.length === 0) {
+        alert('No landmarks calculated to download.');
+        return;
+    }
+
+    // Sort landmarks by time before downloading
+    const sortedLandmarks = [...calculatedLandmarks].sort((a, b) => a.time - b.time);
+
+    const landmarksJson = JSON.stringify(sortedLandmarks, null, 2); // Pretty print JSON
+    const blob = new Blob([landmarksJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `landmarks_${new Date().toISOString().slice(0, 19)}.json`;
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
     setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
