@@ -187,8 +187,6 @@ const phonemes = {
     voiced: true,
     graphemes: ["g", "gg", "gh", "gu", "gue"],
     example: "gun",
-    holdTime: 0.01,
-    offsetBetweenSubPhonemes: 0.02,
     constrictions: [
       {
         back: {
@@ -1065,7 +1063,9 @@ const generateKeyframes = (pronunciation) => {
       holdTime = holdTimes[nextPhoneme];
     }
 
-    const { type, voiced, constrictions } = phonemes[phoneme];
+    const phonemeInfo = phonemes[phoneme];
+    if (!phonemeInfo) return;
+    const { type, voiced, constrictions } = phonemeInfo;
     if (type == "consonant") {
       holdTime = consonantHoldTime;
     }
@@ -1110,12 +1110,10 @@ const generateKeyframes = (pronunciation) => {
       _keyframes.push(holdKeyframe);
 
       if (index == 0 && type == "consonant" && !voiced) {
-        // add keyframe after first to change to voiced
         Object.assign(_keyframes[0], deconstructVoiceness(defaultVoiceness));
         _keyframes[0].intensity = 0;
         const voicedToVoicelessKeyframe = Object.assign({}, _keyframes[0]);
         voicedToVoicelessKeyframe.name = `{${voicedToVoicelessKeyframe.name}`;
-        //voicedToVoicelessKeyframe.isHold = false;
         voicedToVoicelessKeyframe.timeDelta = 0.001;
         voicedToVoicelessKeyframe.intensity = 0.8;
         Object.assign(voicedToVoicelessKeyframe, deconstructVoiceness(defaultVoiceless));
@@ -1125,9 +1123,6 @@ const generateKeyframes = (pronunciation) => {
         const voicelessToVoicedKeyframe = Object.assign({}, _keyframes[_keyframes.length - 1]);
         voicelessToVoicedKeyframe.timeDelta = 0.001;
         voicelessToVoicedKeyframe.name = `${voicelessToVoicedKeyframe.name}}`;
-        //voicelessToVoicedKeyframe.isHold = false;
-
-        //voicelessToVoicedKeyframe.intensity = 0;
         Object.assign(voicelessToVoicedKeyframe, deconstructVoiceness(defaultVoiceness));
         _keyframes.push(voicelessToVoicedKeyframe);
       }

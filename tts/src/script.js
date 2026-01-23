@@ -419,6 +419,12 @@ const createResultContainer = () => {
           offsetBetweenSubPhonemes = phonemeInfo.offsetBetweenSubPhonemes;
         }
 
+        // Use faster transition time for stop consonants to avoid glide-like artifacts
+        let onsetTime = timeBetweenPhonemes;
+        if ("transitionTime" in phonemeInfo) {
+          onsetTime = phonemeInfo.transitionTime;
+        }
+
         constrictions.forEach((constriction, index) => {
           let name = phoneme;
           if (constrictions.length > 1) {
@@ -431,7 +437,7 @@ const createResultContainer = () => {
             intensity: 1,
             name,
             timeDelta: !isSubPhoneme
-              ? timeBetweenPhonemes
+              ? onsetTime
               : timeBetweenSubPhonemes,
             "frontConstriction.diameter": 5,
             "backConstriction.diameter": 5,
@@ -462,7 +468,6 @@ const createResultContainer = () => {
           _keyframes.push(holdKeyframe);
 
           if (index == 0 && type == "consonant" && !voiced) {
-            // add keyframe after first to change to voiced
             Object.assign(
               _keyframes[0],
               deconstructVoiceness(defaultVoiceness)
@@ -471,7 +476,6 @@ const createResultContainer = () => {
             _keyframes[0].isSilent = true;
             const voicedToVoicelessKeyframe = Object.assign({}, _keyframes[0]);
             voicedToVoicelessKeyframe.name = `{${voicedToVoicelessKeyframe.name}`;
-            //voicedToVoicelessKeyframe.isHold = false;
             voicedToVoicelessKeyframe.timeDelta = 0.001;
             voicedToVoicelessKeyframe.isSilent = false;
             voicedToVoicelessKeyframe.intensity = 0.8;
@@ -489,9 +493,6 @@ const createResultContainer = () => {
             );
             voicelessToVoicedKeyframe.timeDelta = 0.001;
             voicelessToVoicedKeyframe.name = `${voicelessToVoicedKeyframe.name}}`;
-            //voicelessToVoicedKeyframe.isHold = false;
-
-            //voicelessToVoicedKeyframe.intensity = 0;
             Object.assign(
               voicelessToVoicedKeyframe,
               deconstructVoiceness(defaultVoiceness)
@@ -631,7 +632,7 @@ const clearResultContainers = () => {
 
 const throttledSend = throttle((message) => {
   send({
-    to: ["pink-trombone", "lip-sync", "lexi"],
+    to: ["pink-trombone", "lip-sync", "lexi", "keyframe-editor"],
     type: "message",
     ...message,
   });
