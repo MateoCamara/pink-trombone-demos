@@ -67,11 +67,17 @@ export function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
         if (parsed.leadingBrace) currentGroup.hasLeadingBrace = true;
     });
 
+    // Track if we've seen a non-silence keyframe yet (for word-initial detection)
+    const firstKeyframeTime = phonemeData.keyframes.find(kf => kf.name !== '.')?.time;
+
     // Process each group to generate landmarks
     groups.forEach(group => {
         const type = group.type;
         const elements = group.elements;
         const parsed = group.parsed;
+
+        // Check if this is word-initial (first element is the first keyframe)
+        const isWordInitial = elements[0].time === firstKeyframeTime;
 
         if (type === 'V') {
             // Vowels: single landmark at each vowel time
@@ -84,20 +90,21 @@ export function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
             createLandmark(mid, 'G', elements[0].name);
         } else if (['S', 'F', 'N'].includes(type)) {
             // Stops, Fricatives, Nasals: closure and release landmarks
-            const closureIdx = 0;
-            const closureTime = elements[closureIdx].time;
-            createLandmark(closureTime, `${type}c`, elements[closureIdx].name);
+            // Skip closure for word-initial stops (e.g., "tap" starts with t, no SC)
+            if (!isWordInitial || type !== 'S') {
+                const closureIdx = 0;
+                const closureTime = elements[closureIdx].time;
+                createLandmark(closureTime, `${type}c`, elements[closureIdx].name);
+            }
 
             if (type === 'S') {
-                // For stops: find transition between subphoneme 0 and 1
+                // For stops: release at subphoneme 1 position (t(1) or p(1))
                 const splitIndex = parsed.findIndex(p => p.subphoneme === 1);
 
                 if (splitIndex > 0) {
-                    // Calculate midpoint between last 0 and first 1
-                    const last0 = elements[splitIndex - 1].time;
-                    const first1 = elements[splitIndex].time;
-                    const releaseTime = (last0 + first1) / 2;
-                    createLandmark(releaseTime, `${type}r`, 'transition');
+                    // Use the first subphoneme 1 time directly
+                    const releaseTime = elements[splitIndex].time;
+                    createLandmark(releaseTime, `${type}r`, elements[splitIndex].name);
                 } else {
                     // Fallback: use element with trailing } or last element
                     const releaseElement = elements.findLast(e =>

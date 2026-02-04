@@ -144,12 +144,15 @@ const phonemes = {
           index: 41.10761642456055,
           diameter: 0.088,
         },
+        // b(0), b(0)] use defaults (no p(0) in p.json)
       },
       {
         front: {
           index: 41.10761642456055,
           diameter: 0.9,
         },
+        duration: 0.01,  // p(1) lasts 10ms (from p.json p(1) duration_ms)
+        holdTime: 0.041, // p(1)] lasts 41ms (from p.json p(1)] duration_ms)
       },
     ],
   },
@@ -163,12 +166,16 @@ const phonemes = {
           index: 35.8536376953125,
           diameter: 0.088,
         },
+        duration: 0.05,  // t(0) lasts 50ms (from t.json t(0) duration_ms)
+        holdTime: 0.01,  // t(0)] lasts 10ms (from t.json t(0)] duration_ms)
       },
       {
         front: {
           index: 35.8536376953125,
           diameter: 0.7306244969367981,
         },
+        duration: 0.01,  // t(1) lasts 10ms (from t.json t(1) duration_ms)
+        holdTime: 0.1,   // t(1)] lasts 100ms (from t.json t(1)] duration_ms)
       },
     ],
   },
@@ -176,11 +183,15 @@ const phonemes = {
     voiced: false,
     graphemes: ["f", "ff", "ph", "gh", "lf", "ft"],
     example: "fat",
+    tenseness: 0.049,
+    loudness: 0.23,
+    holdTime: 0.001, // from f.json f] duration_ms: 1
     constrictions: {
       front: {
-        index: 39.577491760253906,
-        diameter: 0.5085345506668091,
+        index: 39.57,
+        diameter: 0.509,
       },
+      duration: 0.026, // from f.json f duration_ms: 26
     },
   },
   g: {
@@ -267,14 +278,17 @@ const phonemes = {
     voiced: true,
     graphemes: ["m", "mm", "mb", "mn", "lm"],
     example: "man",
+    tenseness: 0.691,
+    loudness: 0.912,
+    holdTime: 0.015, // from m.json m] duration_ms: 15
     constrictions: {
       front: {
-        index: 41.09548568725586,
-        diameter: -1.1418479681015015,
+        index: 41.09,
+        diameter: -1.142,
       },
       tongue: {
-        index: 12.213376998901367,
-        diameter: 2.8788487911224365,
+        index: 12.21,
+        diameter: 2.879,
       },
     },
   },
@@ -282,15 +296,19 @@ const phonemes = {
     voiced: true,
     graphemes: ["n", "nn", "kn", "gn", "pn", "mn"],
     example: "net",
+    tenseness: 0.691,
+    loudness: 0.912,
+    holdTime: 0.106, // from n.json n] duration_ms: 106
     constrictions: {
       front: {
-        index: 35.88129806518555,
-        diameter: -1.2149009704589844,
+        index: 35.88,
+        diameter: -1.215,
       },
       tongue: {
-        index: 12.213376998901367,
-        diameter: 2.8788487911224365,
+        index: 3.0,
+        diameter: 1.8,
       },
+      duration: 0.053, // from n.json n duration_ms: 53
     },
   },
   p: {
@@ -303,14 +321,16 @@ const phonemes = {
     //voiced: true,
     graphemes: ["r", "rr", "wr", "rh"],
     example: "run",
+    tenseness: 0.691,
+    loudness: 0.912,
     constrictions: {
       front: {
-        index: 28.316896438598633,
-        diameter: 0.8469864130020142,
+        index: 28.31,
+        diameter: 0.847,
       },
       tongue: {
-        index: 8.940977096557617,
-        diameter: 1.365233302116394,
+        index: 16.8,
+        diameter: 1.6,
       },
     },
   },
@@ -318,15 +338,19 @@ const phonemes = {
     voiced: false,
     graphemes: ["s", "ss", "c", "sc", "ps", "st", "ce", "se"],
     example: "sit",
+    tenseness: 0.049,
+    loudness: 0.04,
+    holdTime: 0.001, // from s.json s] duration_ms: 1
     constrictions: {
       front: {
-        index: 35.67124557495117,
-        diameter: 0.5797462463378906,
+        index: 35.67,
+        diameter: 0.58,
       },
       tongue: {
-        index: 26.09954261779785,
-        diameter: 3.57755708694458,
+        index: 26.1,
+        diameter: 3.578,
       },
+      duration: 0.01, // from s.json s duration_ms: 10
     },
   },
   t: {
@@ -340,6 +364,7 @@ const phonemes = {
     graphemes: ["v", "f", "ph", "ve"],
     example: "vine",
     alternative: "f",
+    holdTime: 0.075, // from v.json v] duration_ms: 75
   },
   w: {
     voiced: true,
@@ -360,7 +385,20 @@ const phonemes = {
     voiced: true,
     graphemes: ["z", "zz", "s", "ss", "x", "ze", "se"],
     example: "buzz",
-    alternative: "s",
+    tenseness: 0.5,
+    loudness: 0.66,
+    holdTime: 0.001, // from z.json z] duration_ms: 1
+    constrictions: {
+      front: {
+        index: 35.67,
+        diameter: 0.4,
+      },
+      tongue: {
+        index: 37.8,
+        diameter: 3.578,
+      },
+      duration: 0.016, // from z.json z duration_ms: 16
+    },
   },
   ʒ: {
     voiced: true,
@@ -381,15 +419,19 @@ const phonemes = {
     voiced: false,
     graphemes: ["ch", "tch", "tu", "te"],
     example: "chip",
+    tenseness: 0.02,
+    loudness: 0.02,
+    holdTime: 0.01, // from ʧ.json ʧ] duration_ms: 10
     constrictions: {
       tongue: {
-        index: 21.067941665649414,
-        diameter: 2.72188401222229,
+        index: 21.06,
+        diameter: 2.722,
       },
       front: {
-        index: 31.482295989990234,
-        diameter: 0.4663625657558441,
+        index: 31.48,
+        diameter: 0.4,
       },
+      duration: 0.01, // from ʧ.json ʧ duration_ms: 10
     },
   },
   ʃ: {
@@ -1067,20 +1109,34 @@ const generateKeyframes = (pronunciation) => {
     if (!phonemeInfo) return;
     const { type, voiced, constrictions } = phonemeInfo;
     if (type == "consonant") {
-      holdTime = consonantHoldTime;
+      // Use phoneme-specific holdTime if defined, otherwise default
+      holdTime = "holdTime" in phonemeInfo ? phonemeInfo.holdTime : consonantHoldTime;
     }
 
+    // Save phoneme index before inner loop (to avoid shadowing)
+    const phonemeIndex = index;
+
     const _keyframes = [];
-    constrictions.forEach((constriction, index) => {
+    constrictions.forEach((constriction, constrictionIndex) => {
       let name = phoneme;
       if (constrictions.length > 1) {
-        name += `(${index})`;
+        name += `(${constrictionIndex})`;
       }
+
+      // Use custom offsetTime if defined, otherwise default
+      let onsetTime = timeBetweenPhonemes;
+      if ("offsetTime" in phonemeInfo) {
+        onsetTime = phonemeInfo.offsetTime;
+      }
+
+      // Calculate default timeDelta
+      let defaultTimeDelta = constrictionIndex == constrictions.length - 1 ? timeBetweenPhonemes : (constrictionIndex == 0 ? onsetTime : timeBetweenSubPhonemes);
 
       const keyframe = {
         intensity: 1,
         name,
-        timeDelta: index == constrictions.length - 1 ? timeBetweenPhonemes : timeBetweenSubPhonemes,
+        // Use per-constriction duration if defined, otherwise default
+        timeDelta: "duration" in constriction ? constriction.duration : defaultTimeDelta,
         "frontConstriction.diameter": 5,
         "backConstriction.diameter": 5,
       };
@@ -1090,6 +1146,14 @@ const generateKeyframes = (pronunciation) => {
         voiceness = voiced ? defaultVoiceness : defaultVoiceless;
       }
       Object.assign(keyframe, deconstructVoiceness(voiceness));
+
+      // Apply custom tenseness/loudness if defined in phoneme
+      if ("tenseness" in phonemeInfo) {
+        keyframe.tenseness = phonemeInfo.tenseness;
+      }
+      if ("loudness" in phonemeInfo) {
+        keyframe.loudness = phonemeInfo.loudness;
+      }
 
       for (const key in constriction) {
         for (const subKey in constriction[key]) {
@@ -1105,26 +1169,20 @@ const generateKeyframes = (pronunciation) => {
 
       const holdKeyframe = Object.assign({}, keyframe);
       holdKeyframe.isHold = true;
-      holdKeyframe.timeDelta = holdTime;
+      // Use per-constriction holdTime if defined, otherwise use phoneme holdTime
+      holdKeyframe.timeDelta = "holdTime" in constriction ? constriction.holdTime : holdTime;
       holdKeyframe.name = `${holdKeyframe.name}]`;
+      // Apply holdTenseness if defined
+      if ("holdTenseness" in phonemeInfo) {
+        holdKeyframe.tenseness = phonemeInfo.holdTenseness;
+      }
       _keyframes.push(holdKeyframe);
 
-      if (index == 0 && type == "consonant" && !voiced) {
-        Object.assign(_keyframes[0], deconstructVoiceness(defaultVoiceness));
-        _keyframes[0].intensity = 0;
-        const voicedToVoicelessKeyframe = Object.assign({}, _keyframes[0]);
-        voicedToVoicelessKeyframe.name = `{${voicedToVoicelessKeyframe.name}`;
-        voicedToVoicelessKeyframe.timeDelta = 0.001;
-        voicedToVoicelessKeyframe.intensity = 0.8;
-        Object.assign(voicedToVoicelessKeyframe, deconstructVoiceness(defaultVoiceless));
-        _keyframes.splice(1, 0, voicedToVoicelessKeyframe);
-
-        // add keyframe after last to change back to voiced
-        const voicelessToVoicedKeyframe = Object.assign({}, _keyframes[_keyframes.length - 1]);
-        voicelessToVoicedKeyframe.timeDelta = 0.001;
-        voicelessToVoicedKeyframe.name = `${voicelessToVoicedKeyframe.name}}`;
-        Object.assign(voicelessToVoicedKeyframe, deconstructVoiceness(defaultVoiceness));
-        _keyframes.push(voicelessToVoicedKeyframe);
+      // For stop consonants (not word-initial), set closure phase to silent
+      // Exception: word-initial stops (phonemeIndex == 0) keep original behavior
+      if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0) {
+        _keyframes[_keyframes.length - 2].intensity = 0;  // X(0)
+        _keyframes[_keyframes.length - 1].intensity = 0;  // X(0)]
       }
     });
     keyframes.push(..._keyframes);

@@ -71,13 +71,18 @@ const getUtterance = () => {
   return utterance;
 };
 
+const wordGapTime = 0.05; // 50ms silence between words
+
 const renderKeyframes = (
   time = 0,
   frequency = initialFrequency,
   tractLength = initialTractLength
 ) => {
   const keyframes = [];
-  resultsContainer.querySelectorAll(".result").forEach((resultContainer) => {
+  const resultContainers = resultsContainer.querySelectorAll(".result");
+  const totalWords = resultContainers.length;
+
+  resultContainers.forEach((resultContainer, wordIndex) => {
     const _keyframes = resultContainer.renderKeyframes(
       time,
       frequency,
@@ -88,10 +93,25 @@ const renderKeyframes = (
     frequency = lastKeyframe.frequency;
     tractLength = lastKeyframe.tractLength;
     keyframes.push(..._keyframes);
+
+    // Add silence between words (but not after the last word)
+    if (wordIndex < totalWords - 1) {
+      keyframes.push({
+        name: "_",
+        time: time + wordGapTime / speed,
+        frequency,
+        tractLength,
+        intensity: 0,
+      });
+      time = time + wordGapTime / speed;
+    }
   });
+  // Use the last hold keyframe's holdDuration if available, otherwise use releaseTime
+  const lastKeyframe = keyframes[keyframes.length - 1];
+  const finalReleaseTime = lastKeyframe?.holdDuration || releaseTime;
   keyframes.push({
     name: ".",
-    time: time + releaseTime / speed,
+    time: time + finalReleaseTime / speed,
     frequency,
     tractLength,
     intensity: 0,
@@ -305,11 +325,13 @@ const createResultContainer = () => {
   const playButton = resultContainer.querySelector(".play");
   playButton.addEventListener("click", () => {
     const utterance = { name: alternative, keyframes: renderKeyframes() };
-    const { time, frequency } =
-      utterance.keyframes[utterance.keyframes.length - 1];
+    const lastKf = utterance.keyframes[utterance.keyframes.length - 1];
+    const { time, frequency } = lastKf;
+    // Use holdDuration from last keyframe if available, otherwise releaseTime
+    const finalReleaseTime = lastKf?.holdDuration || releaseTime;
     utterance.keyframes.push({
       name: ".",
-      time: time + releaseTime / speed,
+      time: time + finalReleaseTime / speed,
       frequency,
       intensity: 0,
     });
@@ -389,7 +411,7 @@ const createResultContainer = () => {
       const setOffsetBetweenSubPhonemes = (_offsetBetweenSubPhonemes) => {
         offsetBetweenSubPhonemes = _offsetBetweenSubPhonemes;
         const subPhonemeKeyframes = _keyframes.filter(
-          (keyframe) => keyframe.isSubPhoneme
+          (keyframe) => keyframe.isSubPhoneme && !keyframe.isHold
         );
         subPhonemeKeyframes.forEach((subPhonemeKeyframe) => {
           subPhonemeKeyframe.timeDelta = offsetBetweenSubPhonemes;
@@ -425,20 +447,25 @@ const createResultContainer = () => {
           onsetTime = phonemeInfo.transitionTime;
         }
 
-        constrictions.forEach((constriction, index) => {
+        // Save phoneme index before inner loop (to avoid shadowing)
+        const phonemeIndex = index;
+
+        constrictions.forEach((constriction, constrictionIndex) => {
           let name = phoneme;
           if (constrictions.length > 1) {
-            name += `(${index})`;
+            name += `(${constrictionIndex})`;
           }
 
-          const isSubPhoneme = index > 0;
+          const isSubPhoneme = constrictionIndex > 0;
+          // Calculate default timeDelta
+          const defaultTimeDelta = !isSubPhoneme ? onsetTime : timeBetweenSubPhonemes;
+
           const keyframe = {
             isSubPhoneme,
             intensity: 1,
             name,
-            timeDelta: !isSubPhoneme
-              ? onsetTime
-              : timeBetweenSubPhonemes,
+            // Main keyframe uses default transition time
+            timeDelta: defaultTimeDelta,
             "frontConstriction.diameter": 5,
             "backConstriction.diameter": 5,
           };
@@ -448,6 +475,14 @@ const createResultContainer = () => {
             voiceness = voiced ? defaultVoiceness : defaultVoiceless;
           }
           Object.assign(keyframe, deconstructVoiceness(voiceness));
+
+          // Apply custom tenseness/loudness if defined in phoneme
+          if ("tenseness" in phonemeInfo) {
+            keyframe.tenseness = phonemeInfo.tenseness;
+          }
+          if ("loudness" in phonemeInfo) {
+            keyframe.loudness = phonemeInfo.loudness;
+          }
 
           for (const key in constriction) {
             for (const subKey in constriction[key]) {
@@ -463,41 +498,25 @@ const createResultContainer = () => {
 
           const holdKeyframe = Object.assign({}, keyframe);
           holdKeyframe.isHold = true;
-          holdKeyframe.timeDelta = holdTime;
+          // Hold keyframe timeDelta = duration of the main phase (how long main phase lasts)
+          // This makes the main keyframe "last" for this duration before the hold begins
+          holdKeyframe.timeDelta = "duration" in constriction ? constriction.duration : holdTime;
           holdKeyframe.name = `${holdKeyframe.name}]`;
+          // Store holdTime for use by subsequent keyframes (how long this hold phase lasts)
+          if ("holdTime" in constriction) {
+            holdKeyframe.holdDuration = constriction.holdTime;
+          }
+          // Apply holdTenseness if defined
+          if ("holdTenseness" in phonemeInfo) {
+            holdKeyframe.tenseness = phonemeInfo.holdTenseness;
+          }
           _keyframes.push(holdKeyframe);
 
-          if (index == 0 && type == "consonant" && !voiced) {
-            Object.assign(
-              _keyframes[0],
-              deconstructVoiceness(defaultVoiceness)
-            );
-            _keyframes[0].intensity = 0;
-            _keyframes[0].isSilent = true;
-            const voicedToVoicelessKeyframe = Object.assign({}, _keyframes[0]);
-            voicedToVoicelessKeyframe.name = `{${voicedToVoicelessKeyframe.name}`;
-            voicedToVoicelessKeyframe.timeDelta = 0.001;
-            voicedToVoicelessKeyframe.isSilent = false;
-            voicedToVoicelessKeyframe.intensity = 0.8;
-            voicedToVoicelessKeyframe.intensityMultiplier = 0.8;
-            Object.assign(
-              voicedToVoicelessKeyframe,
-              deconstructVoiceness(defaultVoiceless)
-            );
-            _keyframes.splice(1, 0, voicedToVoicelessKeyframe);
-
-            // add keyframe after last to change back to voiced
-            const voicelessToVoicedKeyframe = Object.assign(
-              {},
-              _keyframes[_keyframes.length - 1]
-            );
-            voicelessToVoicedKeyframe.timeDelta = 0.001;
-            voicelessToVoicedKeyframe.name = `${voicelessToVoicedKeyframe.name}}`;
-            Object.assign(
-              voicelessToVoicedKeyframe,
-              deconstructVoiceness(defaultVoiceness)
-            );
-            _keyframes.push(voicelessToVoicedKeyframe);
+          // For stop consonants (not word-initial), set closure phase to silent
+          // Exception: word-initial stops (phonemeIndex == 0) keep original behavior
+          if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0) {
+            _keyframes[_keyframes.length - 2].intensity = 0;  // X(0)
+            _keyframes[_keyframes.length - 1].intensity = 0;  // X(0)]
           }
         });
       }
@@ -726,3 +745,46 @@ pigLatinCheckbox.addEventListener("input", (event) => {
   //console.log("isUsingPigLatin", isUsingPigLatin);
   onResultsUpdate();
 });
+
+// Programmatic synthesis for batch processing (Puppeteer)
+window.synthesizeWord = function(word, config = {}) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Set voice parameters
+      if (config.frequency) {
+        initialFrequency = config.frequency;
+        initialFrequencyInput.value = config.frequency;
+      }
+      if (config.tractLength) {
+        initialTractLength = config.tractLength;
+        initialTractLengthInput.value = config.tractLength;
+      }
+
+      // Input the word
+      textInput.value = word;
+      textInput.dispatchEvent(new Event("input"));
+
+      // Check if word was found in dictionary
+      setTimeout(() => {
+        if (playButton.disabled) {
+          reject(new Error(`Word not found in dictionary: ${word}`));
+          return;
+        }
+
+        // Trigger synthesis
+        playButton.click();
+        resolve({ word, success: true });
+      }, 50);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+window.getWordList = function() {
+  return Object.keys(TextToIPA._IPADict);
+};
+
+window.isTTSReady = function() {
+  return typeof TextToIPA !== 'undefined' && TextToIPA._IPADict && Object.keys(TextToIPA._IPADict).length > 0;
+};

@@ -1,0 +1,15 @@
+{
+  "name": "pink-trombone-batch-generator",
+  "version": "1.0.0",
+  "description": "Batch generator for WAV audio and landmarks from Pink Trombone",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js --test hello",
+    "test-batch": "node index.js --test-batch 10"
+  },
+  "dependencies": {
+    "playwright": "^1.58.1",
+    "puppeteer": "^21.0.0"
+  }
+}

@@ -12,6 +12,7 @@ let audioBuffer = null;
 let currentAudioBlob = null;
 let phonemeData = null;
 let calculatedLandmarks = [];
+let messageCounter = 0;  // Increments each time we receive audio
 
 // Canvas elements
 const waveformCanvas = document.getElementById('waveform');
@@ -29,6 +30,7 @@ async function handleMessage(message) {
     try {
         if (message.type === "waveform") {
             // Store original audio data
+            messageCounter++;  // Signal that new audio arrived
             currentAudioBlob = message.data.slice(0);
             await renderAudio(message.data);
         } else if (message.type === "message") {
@@ -84,4 +86,38 @@ window.downloadLandmarks = function() {
         audioContext?.sampleRate,
         audioBuffer?.duration
     );
+};
+
+// Expose data for batch extraction (Puppeteer)
+window.getCurrentAudio = function() {
+    return currentAudioBlob;
+};
+
+window.getCurrentLandmarks = function() {
+    const audioContext = getAudioContext();
+    return {
+        version: "1.0",
+        sampleRate: audioContext?.sampleRate || 44100,
+        duration: audioBuffer?.duration || 0,
+        landmarks: calculatedLandmarks
+    };
+};
+
+window.isLexiReady = function() {
+    return audioBuffer !== null && calculatedLandmarks.length > 0;
+};
+
+window.getCalculatedLandmarks = function() {
+    return calculatedLandmarks;
+};
+
+window.resetLexi = function() {
+    audioBuffer = null;
+    currentAudioBlob = null;
+    phonemeData = null;
+    calculatedLandmarks = [];
+};
+
+window.getMessageCounter = function() {
+    return messageCounter;
 };
