@@ -371,6 +371,9 @@ const createResultContainer = () => {
 
     keyframes.length = 0;
 
+    // Track if previous phoneme specified a custom transition time for the next one
+    let prevNextTransitionTime = null;
+
     [...alternative].forEach((phoneme, index) => {
       if (phoneme == "ˈ" || phoneme == "ˌ") {
         return;
@@ -443,8 +446,17 @@ const createResultContainer = () => {
 
         // Use faster transition time for stop consonants to avoid glide-like artifacts
         let onsetTime = timeBetweenPhonemes;
-        if ("transitionTime" in phonemeInfo) {
+        // If previous phoneme specified nextTransitionTime, use that instead
+        if (prevNextTransitionTime !== null) {
+          onsetTime = prevNextTransitionTime;
+          prevNextTransitionTime = null; // Reset after using
+        } else if ("transitionTime" in phonemeInfo) {
           onsetTime = phonemeInfo.transitionTime;
+        }
+
+        // Check if this phoneme specifies transition time for the NEXT phoneme
+        if ("nextTransitionTime" in phonemeInfo) {
+          prevNextTransitionTime = phonemeInfo.nextTransitionTime;
         }
 
         // Save phoneme index before inner loop (to avoid shadowing)
@@ -496,21 +508,24 @@ const createResultContainer = () => {
           }
           _keyframes.push(keyframe);
 
-          const holdKeyframe = Object.assign({}, keyframe);
-          holdKeyframe.isHold = true;
-          // Hold keyframe timeDelta = duration of the main phase (how long main phase lasts)
-          // This makes the main keyframe "last" for this duration before the hold begins
-          holdKeyframe.timeDelta = "duration" in constriction ? constriction.duration : holdTime;
-          holdKeyframe.name = `${holdKeyframe.name}]`;
-          // Store holdTime for use by subsequent keyframes (how long this hold phase lasts)
-          if ("holdTime" in constriction) {
-            holdKeyframe.holdDuration = constriction.holdTime;
+          // Skip hold keyframe if phoneme has skipHold flag (e.g., ɚ)
+          if (!phonemeInfo.skipHold) {
+            const holdKeyframe = Object.assign({}, keyframe);
+            holdKeyframe.isHold = true;
+            // Hold keyframe timeDelta = duration of the main phase (how long main phase lasts)
+            // This makes the main keyframe "last" for this duration before the hold begins
+            holdKeyframe.timeDelta = "duration" in constriction ? constriction.duration : holdTime;
+            holdKeyframe.name = `${holdKeyframe.name}]`;
+            // Store holdTime for use by subsequent keyframes (how long this hold phase lasts)
+            if ("holdTime" in constriction) {
+              holdKeyframe.holdDuration = constriction.holdTime;
+            }
+            // Apply holdTenseness if defined
+            if ("holdTenseness" in phonemeInfo) {
+              holdKeyframe.tenseness = phonemeInfo.holdTenseness;
+            }
+            _keyframes.push(holdKeyframe);
           }
-          // Apply holdTenseness if defined
-          if ("holdTenseness" in phonemeInfo) {
-            holdKeyframe.tenseness = phonemeInfo.holdTenseness;
-          }
-          _keyframes.push(holdKeyframe);
 
           // For stop consonants (not word-initial), set closure phase to silent
           // Exception: word-initial stops (phonemeIndex == 0) keep original behavior
