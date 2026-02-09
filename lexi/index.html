@@ -4,76 +4,252 @@
     <title>Lexi View</title>
     <script src="/src/utils.js"></script>
     <style>
-        .container {
-            display: grid;
-            grid-template-rows: auto auto auto; /* Nueva fila para fonemas */
-            gap: 20px;
-            padding: 20px;
-        }
-        canvas {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        #phonemes-container {
-            height: 60px;
-            position: relative;
-            margin-top: 10px;
-            border-top: 1px solid #ddd;
+        *, *::before, *::after {
+            box-sizing: border-box;
         }
 
-        .phoneme-label {
-            position: absolute;
-            bottom: 5px;
-            transform: none; /* Eliminamos el centrado */
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-size: 13px;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            color: #e0e0e0;
+        }
+
+        .header a {
+            color: #888;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .header a:hover {
+            color: #bbb;
+        }
+
+        /* Container */
+        .container {
+            display: grid;
+            grid-template-rows: auto auto auto auto auto auto;
+            gap: 0;
+            padding: 20px 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Canvases */
+        canvas {
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            display: block;
+            width: 100%;
+        }
+
+        #waveform {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom: none;
+        }
+
+        /* FFT Controls Panel */
+        .fft-controls {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-top: none;
+            border-bottom: none;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .fft-controls .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .fft-controls label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             white-space: nowrap;
-            font-family: Arial, sans-serif;
+        }
+
+        .fft-controls select {
+            background: #252525;
+            color: #e0e0e0;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            padding: 3px 8px;
             font-size: 12px;
-            color: #333;
-            padding-left: 8px; /* Espacio después de la barra */
-            border-left: 3px solid #FF6B6B;
-            height: 15px;
+            cursor: pointer;
+        }
+
+        .fft-controls select:hover {
+            border-color: #555;
+        }
+
+        .fft-controls input[type="range"] {
+            width: 100px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .fft-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+        }
+
+        .fft-controls .db-value {
+            color: #aaa;
+            font-size: 11px;
+            min-width: 50px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Spectrogram */
+        #spectrogram {
+            border-radius: 0;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-top: none;
+        }
+
+        /* Phoneme Timeline Bar */
+        #phoneme-timeline-container {
+            height: 50px;
+            position: relative;
+            margin: 0;
+            background: #1a1a1a;
+            border-left: 1px solid #2a2a2a;
+            border-right: 1px solid #2a2a2a;
+            overflow: hidden;
+        }
+
+        #phoneme-timeline {
+            height: 100%;
+            position: relative;
+        }
+
+        .timeline-segment {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            box-sizing: border-box;
+            overflow: hidden;
+            text-shadow: 0 0 3px rgba(0,0,0,0.8);
+            z-index: 0;
+        }
+
+        .timeline-segment.vowel { background: #FF6B6B; }
+        .timeline-segment.consonant { background: #4ECDC4; }
+        .timeline-segment.silent { background: #333; }
+        .timeline-segment.stop { background: #ec00ff; }
+        .timeline-segment.fricative { background: #ffd900; color: #333; }
+        .timeline-segment.nasal { background: #1c50d3; }
+        .timeline-segment.glide { background: #f39c12; }
+        .timeline-segment.affricate { background: #1abc9c; }
+
+        .timeline-segment.hold::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 3px,
+                rgba(0,0,0,0.25) 3px,
+                rgba(0,0,0,0.25) 6px
+            );
             pointer-events: none;
         }
 
-        .phoneme-label::after {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -3px;
-            width: 3px;
-            height: 20px;
-            background: #FF6B6B;
-            opacity: 0.3;
-        }
-
-        /* Para fonemas principales */
-        .phoneme-label.main {
-            border-left-color: #4ECDC4;
-            font-weight: bold;
-        }
-
-        .phoneme-label.main::after {
-            background: #4ECDC4;
-        }
+        /* Landmarks Container */
         #landmarks-container {
-            height: 60px;
+            height: 65px;
             position: relative;
-            margin: 20px 0;
-            border-top: 2px solid #eee;
+            margin: 0;
+            background: #151515;
+            border: 1px solid #2a2a2a;
+            border-top: 1px solid #333;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+            overflow: visible;
+        }
+
+        #landmarks {
+            height: 100%;
+            position: relative;
         }
 
         .landmark {
             position: absolute;
-            pointer-events: none;
             display: flex;
             flex-direction: column;
             align-items: center;
             transform: translateX(-50%);
+            cursor: grab;
+            z-index: 1;
+        }
+
+        .landmark:hover {
+            z-index: 10;
+        }
+
+        .landmark.dragging {
+            cursor: grabbing;
+            opacity: 0.7;
+            z-index: 20;
         }
 
         .landmark-bar {
             width: 3px;
             height: 25px;
+        }
+
+        .user-landmark .landmark-bar {
+            border: 1px dashed rgba(255,255,255,0.4);
+            width: 5px;
         }
 
         .landmark-range {
@@ -91,9 +267,37 @@
             border-radius: 2px;
             position: absolute;
             top: 30px;
+            white-space: nowrap;
         }
 
-        /* Colores y categorías */
+        /* Landmark delete button */
+        .landmark-delete {
+            position: absolute;
+            top: -6px;
+            right: -8px;
+            width: 14px;
+            height: 14px;
+            background: #dc2626;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 10px;
+            line-height: 14px;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 30;
+        }
+
+        .landmark:hover .landmark-delete {
+            opacity: 1;
+        }
+
+        .landmark-delete:hover {
+            background: #ef4444;
+        }
+
+        /* Landmark type colors */
         .V .landmark-bar { background: #FF6B6B; }
         .V .landmark-label { background: #FF6B6B; }
 
@@ -109,7 +313,6 @@
         .S .landmark-bar { background: #45B7D1; }
         .S .landmark-label { background: #45B7D1; }
 
-        /* Especiales para stop/release */
         .Nc .landmark-bar { background: #1c50d3; }
         .Nr .landmark-bar { background: #80a0ff; }
         .Sc .landmark-bar { background: #ec00ff; }
@@ -120,36 +323,134 @@
         .Nc .landmark-label { background: #1c50d3; }
         .Nr .landmark-label { background: #80a0ff; }
         .Sc .landmark-label { background: #ec00ff; }
-        .Sr .landmark-label { background: #f9afff; }
-        .Fc .landmark-label { background: #ffd900; }
-        .Fr .landmark-label { background: #fff4c3; }
+        .Sr .landmark-label { background: #f9afff; color: #333; }
+        .Fc .landmark-label { background: #ffd900; color: #333; }
+        .Fr .landmark-label { background: #fff4c3; color: #333; }
 
-        /* Añadir al CSS */
         .A .landmark-bar { background: #FFA577; }
         .A .landmark-label { background: #FFA577; }
+
+        /* Landmark Picker Popover */
+        .landmark-picker {
+            position: absolute;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 100;
+            min-width: 160px;
+        }
+
+        .picker-btn {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.1s;
+        }
+
+        .picker-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .picker-btn.V { border-color: #FF6B6B; color: #FF6B6B; }
+        .picker-btn.G { border-color: #4ECDC4; color: #4ECDC4; }
+        .picker-btn.N, .picker-btn.Nc, .picker-btn.Nr { border-color: #96CEB4; color: #96CEB4; }
+        .picker-btn.F, .picker-btn.Fc, .picker-btn.Fr { border-color: #FFEEAD; color: #FFEEAD; }
+        .picker-btn.S, .picker-btn.Sc, .picker-btn.Sr { border-color: #45B7D1; color: #45B7D1; }
+
+        /* Buttons */
+        .button-bar {
+            padding: 16px 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-btn {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .download-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .download-btn:active {
+            background: #1e40af;
+        }
+
+        .save-all-btn {
+            background: #059669;
+        }
+
+        .save-all-btn:hover {
+            background: #047857;
+        }
+
+        .save-all-btn:active {
+            background: #065f46;
+        }
     </style>
 </head>
 <body>
-<nav>
+<div class="header">
+    <h1>Lexi - Landmark Visualization</h1>
     <a href="../../">home</a>
-</nav>
-<h1>Lexi - Landmark Visualization</h1>
+</div>
 <div class="container">
-<!--    <h2>Waveform</h2>-->
     <canvas id="waveform" width="1200" height="150"></canvas>
-<!--    <h2>Spectrogram</h2>-->
-    <canvas id="spectrogram" width="1200" height="300"></canvas>
-<!--    <h2>Phonemes & Landmarks</h2>-->
-    <div id="phonemes-container">
-        <div id="phonemes"></div>
+    <div class="fft-controls">
+        <div class="control-group">
+            <label for="fft-size">FFT Size</label>
+            <select id="fft-size">
+                <option value="256">256</option>
+                <option value="512" selected>512</option>
+                <option value="1024">1024</option>
+                <option value="2048">2048</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="min-db">Min dB</label>
+            <input type="range" id="min-db" min="-120" max="-40" value="-100" step="1">
+            <span class="db-value" id="min-db-value">-100 dB</span>
+        </div>
+        <div class="control-group">
+            <label for="max-db">Max dB</label>
+            <input type="range" id="max-db" min="-20" max="0" value="0" step="1">
+            <span class="db-value" id="max-db-value">0 dB</span>
+        </div>
     </div>
-    <!-- Agrega esto después del contenedor de fonemas -->
+    <canvas id="spectrogram" width="1200" height="300"></canvas>
+    <div id="phoneme-timeline-container">
+        <div id="phoneme-timeline"></div>
+    </div>
     <div id="landmarks-container">
         <div id="landmarks"></div>
     </div>
 </div>
-<button onclick="downloadAudio()" class="download-btn">Download WAV</button>
-<button onclick="downloadLandmarks()" id="download-landmarks-btn" class="download-btn">Download Landmarks</button>
+<div class="button-bar">
+    <button onclick="downloadAudio()" class="download-btn">Download WAV</button>
+    <button onclick="downloadLandmarks()" id="download-landmarks-btn" class="download-btn">Download Landmarks</button>
+    <button onclick="saveAll()" class="download-btn save-all-btn">Save All</button>
+</div>
 <script type="module" src="/lexi/src/script.js"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
-// Waveform (time domain) visualization
+// Waveform (time domain) visualization - filled gradient mirror style
 
-import { WAVEFORM_COLOR, WAVEFORM_LINE_WIDTH, VERTICAL_MARGIN_PERCENT } from './constants.js';
+import { VERTICAL_MARGIN_PERCENT } from './constants.js';
 
 /**
- * Draw time domain waveform on canvas
+ * Draw time domain waveform as a filled mirror waveform with gradient
  * @param {HTMLCanvasElement} canvas - Target canvas
  * @param {AudioBuffer} audioBuffer - Audio data
  */
@@ -12,20 +12,22 @@ export function drawTimeDomain(canvas, audioBuffer) {
     const data = audioBuffer.getChannelData(0);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
 
     // Find global peak for normalization
     let globalPeak = 0;
     for (let i = 0; i < data.length; i++) {
         globalPeak = Math.max(globalPeak, Math.abs(data[i]));
     }
-    if (globalPeak === 0) globalPeak = 1; // Avoid division by zero
+    if (globalPeak === 0) globalPeak = 1;
 
-    // Calculate scaling parameters
     const segmentWidth = data.length / canvas.width;
+    const yCenter = canvas.height / 2;
     const verticalScale = (canvas.height * VERTICAL_MARGIN_PERCENT) / (2 * globalPeak);
 
-    // Draw min-max envelope per pixel column
+    // Build upper (max) and lower (min) envelope arrays
+    const maxVals = new Float32Array(canvas.width);
+    const minVals = new Float32Array(canvas.width);
+
     for (let x = 0; x < canvas.width; x++) {
         const start = Math.floor(x * segmentWidth);
         const end = Math.floor((x + 1) * segmentWidth);
@@ -33,20 +35,76 @@ export function drawTimeDomain(canvas, audioBuffer) {
         let min = Infinity;
 
         for (let i = start; i < end && i < data.length; i++) {
-            const val = data[i];
-            max = Math.max(max, val);
-            min = Math.min(min, val);
+            max = Math.max(max, data[i]);
+            min = Math.min(min, data[i]);
         }
 
-        const yCenter = canvas.height / 2;
-        const yMax = yCenter - (max * verticalScale);
-        const yMin = yCenter - (min * verticalScale);
-
-        ctx.moveTo(x, yMax);
-        ctx.lineTo(x, yMin);
+        maxVals[x] = max;
+        minVals[x] = min;
     }
 
-    ctx.strokeStyle = WAVEFORM_COLOR;
-    ctx.lineWidth = WAVEFORM_LINE_WIDTH;
+    // Create upper path (positive envelope)
+    const upperPath = new Path2D();
+    upperPath.moveTo(0, yCenter);
+    for (let x = 0; x < canvas.width; x++) {
+        upperPath.lineTo(x, yCenter - maxVals[x] * verticalScale);
+    }
+    upperPath.lineTo(canvas.width - 1, yCenter);
+    upperPath.closePath();
+
+    // Create lower path (negative envelope)
+    const lowerPath = new Path2D();
+    lowerPath.moveTo(0, yCenter);
+    for (let x = 0; x < canvas.width; x++) {
+        lowerPath.lineTo(x, yCenter - minVals[x] * verticalScale);
+    }
+    lowerPath.lineTo(canvas.width - 1, yCenter);
+    lowerPath.closePath();
+
+    // Fill upper half with gradient (center -> top)
+    const upperGrad = ctx.createLinearGradient(0, yCenter, 0, 0);
+    upperGrad.addColorStop(0, 'rgba(99, 179, 237, 0.9)');
+    upperGrad.addColorStop(0.5, 'rgba(66, 153, 225, 0.7)');
+    upperGrad.addColorStop(1, 'rgba(49, 130, 206, 0.35)');
+
+    ctx.fillStyle = upperGrad;
+    ctx.fill(upperPath);
+
+    // Fill lower half with gradient (center -> bottom)
+    const lowerGrad = ctx.createLinearGradient(0, yCenter, 0, canvas.height);
+    lowerGrad.addColorStop(0, 'rgba(99, 179, 237, 0.9)');
+    lowerGrad.addColorStop(0.5, 'rgba(66, 153, 225, 0.7)');
+    lowerGrad.addColorStop(1, 'rgba(49, 130, 206, 0.35)');
+
+    ctx.fillStyle = lowerGrad;
+    ctx.fill(lowerPath);
+
+    // Thin outline stroke for crispness
+    ctx.beginPath();
+    for (let x = 0; x < canvas.width; x++) {
+        const yMax = yCenter - maxVals[x] * verticalScale;
+        if (x === 0) ctx.moveTo(x, yMax);
+        else ctx.lineTo(x, yMax);
+    }
+    ctx.strokeStyle = 'rgba(99, 179, 237, 0.5)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (let x = 0; x < canvas.width; x++) {
+        const yMin = yCenter - minVals[x] * verticalScale;
+        if (x === 0) ctx.moveTo(x, yMin);
+        else ctx.lineTo(x, yMin);
+    }
+    ctx.strokeStyle = 'rgba(99, 179, 237, 0.5)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Subtle center line
+    ctx.beginPath();
+    ctx.moveTo(0, yCenter);
+    ctx.lineTo(canvas.width, yCenter);
+    ctx.strokeStyle = 'rgba(99, 179, 237, 0.2)';
+    ctx.lineWidth = 1;
     ctx.stroke();
 }
