@@ -374,6 +374,8 @@ const createResultContainer = () => {
     // Track if previous phoneme specified a custom transition time for the next one
     let prevNextTransitionTime = null;
 
+    let actualPhonemeIndex = 0;
+
     [...alternative].forEach((phoneme, index) => {
       if (phoneme == "ˈ" || phoneme == "ˌ") {
         return;
@@ -534,6 +536,45 @@ const createResultContainer = () => {
             _keyframes[_keyframes.length - 1].intensity = 0;  // X(0)]
           }
         });
+
+        // First-consonant coarticulation: overlay the following vowel's
+        // constriction positions onto the first consonant's keyframes
+        // to avoid an audible glide artifact at word onset.
+        if (actualPhonemeIndex === 0 && type === "consonant") {
+          let nextActualPhoneme = null;
+          for (let i = index + 1; i < alternative.length; i++) {
+            const candidate = alternative[i];
+            if (candidate !== "ˈ" && candidate !== "ˌ") {
+              if (candidate in phonemes) {
+                nextActualPhoneme = candidate;
+              }
+              break;
+            }
+          }
+
+          if (nextActualPhoneme) {
+            const nextPhonemeInfo = phonemes[nextActualPhoneme];
+            if (nextPhonemeInfo.type === "vowel") {
+              const vowelConstriction = nextPhonemeInfo.constrictions[0];
+              const vowelProperties = {};
+              for (const key in vowelConstriction) {
+                if (typeof vowelConstriction[key] === "object" && vowelConstriction[key] !== null) {
+                  for (const subKey in vowelConstriction[key]) {
+                    let propName = key;
+                    if (key !== "tongue") {
+                      propName += "Constriction";
+                    }
+                    propName += `.${subKey}`;
+                    vowelProperties[propName] = vowelConstriction[key][subKey];
+                  }
+                }
+              }
+              _keyframes.forEach((kf) => {
+                Object.assign(kf, vowelProperties);
+              });
+            }
+          }
+        }
       }
       if (nextPhoneme == "ˈ" || nextPhoneme == "ˌ") {
         holdTime = holdTimes[nextPhoneme];
@@ -617,6 +658,8 @@ const createResultContainer = () => {
 
       phonemeContainer.querySelector(".text").innerText = phoneme;
       phonemesContainer.appendChild(phonemeContainer);
+
+      actualPhonemeIndex++;
     });
     //console.log("keyframes", keyframes);
     updatePhonemesInput();
