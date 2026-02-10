@@ -6,6 +6,7 @@ import { drawTimeDomain } from './modules/waveform.js';
 import { drawSpectrogram } from './modules/spectrogram.js';
 import { drawPhonemes } from './modules/phonemes.js';
 import { drawLandmarks, downloadLandmarks as downloadLandmarksFile, getExportLandmarks, getLandmarkStore, resetLandmarkStore } from './modules/landmarks.js';
+import { drawEnergyPlot } from './modules/energy.js';
 
 // Centralized state
 const state = {
@@ -24,6 +25,7 @@ const state = {
 // Canvas elements
 const waveformCanvas = document.getElementById('waveform');
 const spectrogramCanvas = document.getElementById('spectrogram');
+const energyCanvas = document.getElementById('energy-plot');
 
 // Setup inter-module communication
 const { onMessage } = setupConnection("lexi", handleMessage);
@@ -75,13 +77,22 @@ function renderAll() {
     // Trim audio to [trimStart, trimEnd]
     state.audioBuffer = trimAudioBufferRange(state.rawAudioBuffer, state.trimStart, state.trimEnd, audioContext);
 
-    // Sync canvas widths
-    waveformCanvas.width = waveformCanvas.offsetWidth;
-    spectrogramCanvas.width = waveformCanvas.width;
+    // Compute canvas width: use a minimum pixels-per-second so long utterances scroll
+    const container = document.getElementById('container');
+    const viewportWidth = container.clientWidth;
+    const minPxPerSec = 800;
+    const durationWidth = Math.ceil(state.audioBuffer.duration * minPxPerSec);
+    const canvasWidth = Math.max(viewportWidth, durationWidth);
 
-    // Sync DOM container widths to match canvases
-    document.getElementById('phoneme-timeline-container').style.width = `${waveformCanvas.width}px`;
-    document.getElementById('landmarks-container').style.width = `${waveformCanvas.width}px`;
+    // Sync all element widths (pixel buffer + CSS display size)
+    waveformCanvas.width = canvasWidth;
+    waveformCanvas.style.width = `${canvasWidth}px`;
+    spectrogramCanvas.width = canvasWidth;
+    spectrogramCanvas.style.width = `${canvasWidth}px`;
+    document.querySelector('.fft-controls').style.width = `${canvasWidth}px`;
+    document.getElementById('phoneme-timeline-container').style.width = `${canvasWidth}px`;
+    document.getElementById('energy-plot-container').style.width = `${canvasWidth}px`;
+    document.getElementById('landmarks-container').style.width = `${canvasWidth}px`;
 
     // Draw visualizations
     drawTimeDomain(waveformCanvas, state.audioBuffer);
@@ -90,6 +101,11 @@ function renderAll() {
         minDb: state.spectrogramMinDb,
         maxDb: state.spectrogramMaxDb,
     });
+
+    // Draw energy plot
+    energyCanvas.width = canvasWidth;
+    energyCanvas.style.width = `${canvasWidth}px`;
+    drawEnergyPlot(energyCanvas, state.audioBuffer);
 
     // Draw annotations if phoneme data available
     redrawAnnotations();
@@ -109,7 +125,7 @@ function redrawAnnotations() {
         };
 
         drawPhonemes(adjustedData, state.audioBuffer.duration, waveformCanvas.width);
-        drawLandmarks(adjustedData, state.audioBuffer.duration, waveformCanvas.width);
+        drawLandmarks(adjustedData, state.audioBuffer.duration, waveformCanvas.width, state.audioBuffer);
     }
 }
 

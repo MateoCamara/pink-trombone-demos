@@ -22,25 +22,23 @@ pinkTromboneElement.addEventListener("load", (event) => {
 
       pinkTromboneElement.pinkTrombone._pinkTromboneNode.connect(audioContext.destination);
     } else {
+      const ptNode = pinkTromboneElement.pinkTrombone._pinkTromboneNode;
+
+      // Speakers: extract ch0 (combined) only
       const splitter = audioContext.createChannelSplitter(2);
+      ptNode.connect(splitter);
+      splitter.connect(audioContext.destination, 0);
 
-      // Nodo principal de salida
-      const mainOutput = audioContext.createGain();
-
-      // Nodo para grabación
+      // Recording: preserve both channels
       const recordingOutput = audioContext.createGain();
-
-      // Conexiones:
-      pinkTromboneElement.pinkTrombone._pinkTromboneNode
-          .connect(splitter)
-          .connect(audioContext.destination);  // Altavoces
-
-      splitter.connect(recordingOutput);
+      recordingOutput.channelCount = 2;
+      recordingOutput.channelCountMode = 'explicit';
+      ptNode.connect(recordingOutput);
       pinkTromboneElement.recordingOutput = recordingOutput;
 
-      // Configurar MediaStreamDestination una sola vez
       mediaStreamDest = audioContext.createMediaStreamDestination();
-      pinkTromboneElement.recordingOutput.connect(mediaStreamDest);
+      mediaStreamDest.channelCount = 2;
+      recordingOutput.connect(mediaStreamDest);
       mediaRecorder = new MediaRecorder(mediaStreamDest.stream);
 
     }

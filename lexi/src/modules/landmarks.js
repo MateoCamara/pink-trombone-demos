@@ -2,6 +2,7 @@
 
 import { LANDMARK_MAP, LANDMARK_EXPORT_VERSION, LANDMARK_TYPES } from './constants.js';
 import { cleanPhoneme, parsePhonemeName } from './phonemes.js';
+import { refineLandmarkPositions } from './energy-analysis.js';
 
 // Landmark store: single source of truth for all landmarks
 let landmarkStore = [];
@@ -47,9 +48,10 @@ export function getLandmarkType(basePhoneme) {
  * @param {Object} phonemeData - Phoneme data with keyframes
  * @param {number} audioDuration - Total audio duration
  * @param {number} canvasWidth - Width of display canvas
+ * @param {AudioBuffer|null} audioBuffer - Optional audio buffer for energy-based refinement
  * @returns {Array} All landmarks in the store
  */
-export function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
+export function drawLandmarks(phonemeData, audioDuration, canvasWidth, audioBuffer = null) {
     const container = document.getElementById('landmarks');
     container.innerHTML = '';
 
@@ -61,6 +63,11 @@ export function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
 
     // Generate auto-detected landmarks
     const autoLandmarks = generateAutoLandmarks(phonemeData, audioDuration);
+
+    // Refine positions using energy envelopes (if audio available)
+    if (audioBuffer) {
+        refineLandmarkPositions(autoLandmarks, audioBuffer, audioDuration);
+    }
 
     // Add auto-landmarks to store (skip if previously deleted)
     autoLandmarks.forEach(lm => {
@@ -81,12 +88,14 @@ export function drawLandmarks(phonemeData, audioDuration, canvasWidth) {
 }
 
 /**
- * Generate auto-detected landmarks from phoneme data (no DOM, pure data)
+ * Generate auto-detected landmarks from phoneme data (no DOM, pure data).
+ * Uses articulatory state changes encoded in keyframe data to detect
+ * closure and release events.
  */
 function generateAutoLandmarks(phonemeData, audioDuration) {
     const landmarks = [];
 
-    // Group consecutive phonemes by type
+    // Group consecutive keyframes by phoneme type and base
     const groups = [];
     let currentGroup = null;
 
@@ -118,24 +127,15 @@ function generateAutoLandmarks(phonemeData, audioDuration) {
 
         currentGroup.elements.push(kf);
         currentGroup.parsed.push(parsed);
-        if (parsed.leadingBrace) currentGroup.hasLeadingBrace = true;
     });
-
-    const firstKeyframeTime = phonemeData.keyframes.find(kf => kf.name !== '.')?.time;
-    const allKeyframes = phonemeData.keyframes.filter(kf => kf.name !== '.');
 
     groups.forEach((group, groupIndex) => {
         const type = group.type;
         const elements = group.elements;
         const parsed = group.parsed;
 
-        const isWordInitial = elements[0].time === firstKeyframeTime;
-
-        const lastElementTime = elements[elements.length - 1].time;
-        const nextKeyframe = allKeyframes.find(kf => kf.time > lastElementTime);
-        const groupEndTime = nextKeyframe ? nextKeyframe.time : lastElementTime;
-
         if (type === 'V') {
+            // Vowels: single landmark at keyframe time
             elements.forEach(kf => {
                 landmarks.push({
                     type: 'V', time: kf.time, name: kf.name,
@@ -143,6 +143,7 @@ function generateAutoLandmarks(phonemeData, audioDuration) {
                 });
             });
         } else if (type === 'G') {
+            // Glides: single landmark at midpoint
             const start = elements[0].time;
             const end = elements[elements.length - 1].time;
             const mid = (start + end) / 2;
@@ -151,85 +152,56 @@ function generateAutoLandmarks(phonemeData, audioDuration) {
                 source: 'auto', originalTime: mid
             });
         } else if (['S', 'F', 'N'].includes(type)) {
-            const NC_OFFSET = -0.010;
-            const NR_OFFSET = 0.010;
-            const FR_OFFSET = 0.010;
-            const SC_OFFSET = -0.080;
+            const isMultiPhase = parsed.some(p => p.subphoneme !== null);
+            // First consonant in utterance has no closure (nothing precedes it)
+            const isUtteranceInitial = groupIndex === 0;
 
-            const prevGroup = groupIndex > 0 ? groups[groupIndex - 1] : null;
-            const prevWasConsonant = prevGroup && ['S', 'F', 'N'].includes(prevGroup.type);
+            if (isMultiPhase) {
+                // Multi-phase consonants (stops b,d,g,p,t,k and velar nasal ŋ):
+                // Closure = subphoneme 0 non-hold keyframe time
+                // Release = subphoneme 1 non-hold keyframe time
+                const closureKf = elements.find((_, i) =>
+                    parsed[i].subphoneme === 0 && !parsed[i].trailingClosure
+                );
+                const releaseKf = elements.find((_, i) =>
+                    parsed[i].subphoneme === 1 && !parsed[i].trailingClosure
+                );
 
-            if (!isWordInitial) {
-                if (type === 'N') {
-                    const closureTime = elements[0].time + NC_OFFSET;
+                if (closureKf && !isUtteranceInitial) {
                     landmarks.push({
-                        type: `${type}c`, time: closureTime, name: elements[0].name,
-                        source: 'auto', originalTime: closureTime
-                    });
-                } else if (type === 'S') {
-                    const scOffset = prevWasConsonant ? SC_OFFSET : 0;
-                    const closureTime = elements[0].time + scOffset;
-                    landmarks.push({
-                        type: `${type}c`, time: closureTime, name: elements[0].name,
-                        source: 'auto', originalTime: closureTime
-                    });
-                } else {
-                    const closureTime = elements[0].time;
-                    landmarks.push({
-                        type: `${type}c`, time: closureTime, name: elements[0].name,
-                        source: 'auto', originalTime: closureTime
+                        type: `${type}c`, time: closureKf.time, name: closureKf.name,
+                        source: 'auto', originalTime: closureKf.time
                     });
                 }
-            }
+                if (releaseKf) {
+                    landmarks.push({
+                        type: `${type}r`, time: releaseKf.time, name: releaseKf.name,
+                        source: 'auto', originalTime: releaseKf.time
+                    });
+                }
+            } else {
+                // Single-phase consonants (nasals m,n and all fricatives):
+                // Closure = first non-hold keyframe time
+                // Release = hold keyframe ']' time
+                const closureKf = elements.find((_, i) =>
+                    !parsed[i].trailingClosure
+                );
+                const releaseKf = elements.find((_, i) =>
+                    parsed[i].trailingClosure
+                );
 
-            if (type === 'S') {
-                const holdIndex = parsed.findIndex(p => p.subphoneme === 1 && p.trailingClosure);
-                if (holdIndex >= 0) {
-                    const releaseTime = elements[holdIndex].time;
+                if (closureKf && !isUtteranceInitial) {
                     landmarks.push({
-                        type: `${type}r`, time: releaseTime, name: elements[holdIndex].name,
-                        source: 'auto', originalTime: releaseTime
-                    });
-                } else {
-                    const splitIndex = parsed.findIndex(p => p.subphoneme === 1);
-                    if (splitIndex > 0) {
-                        const releaseTime = elements[splitIndex].time;
-                        landmarks.push({
-                            type: `${type}r`, time: releaseTime, name: elements[splitIndex].name,
-                            source: 'auto', originalTime: releaseTime
-                        });
-                    } else {
-                        landmarks.push({
-                            type: `${type}r`, time: groupEndTime, name: elements[elements.length - 1].name,
-                            source: 'auto', originalTime: groupEndTime
-                        });
-                    }
-                }
-            } else if (type === 'F') {
-                const holdIndex = parsed.findIndex(p => p.trailingClosure);
-                if (holdIndex >= 0) {
-                    const releaseTime = elements[holdIndex].time + FR_OFFSET;
-                    landmarks.push({
-                        type: `${type}r`, time: releaseTime, name: elements[holdIndex].name,
-                        source: 'auto', originalTime: releaseTime
-                    });
-                } else {
-                    landmarks.push({
-                        type: `${type}r`, time: groupEndTime, name: elements[elements.length - 1].name,
-                        source: 'auto', originalTime: groupEndTime
+                        type: `${type}c`, time: closureKf.time, name: closureKf.name,
+                        source: 'auto', originalTime: closureKf.time
                     });
                 }
-            } else if (type === 'N') {
-                const baseName = parsed[0]?.base || '';
-                let nrOffset = NR_OFFSET;
-                if (isWordInitial) {
-                    if (baseName === 'm' || baseName === 'n') nrOffset = 0.060;
+                if (releaseKf) {
+                    landmarks.push({
+                        type: `${type}r`, time: releaseKf.time, name: releaseKf.name,
+                        source: 'auto', originalTime: releaseKf.time
+                    });
                 }
-                const releaseTime = elements[0].time + nrOffset;
-                landmarks.push({
-                    type: `${type}r`, time: releaseTime, name: elements[0].name,
-                    source: 'auto', originalTime: releaseTime
-                });
             }
         }
     });

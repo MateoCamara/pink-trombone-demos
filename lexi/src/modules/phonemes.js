@@ -43,7 +43,7 @@ export function parsePhonemeName(name) {
 /**
  * Get phoneme category for coloring
  * @param {string} basePhoneme - Base phoneme character
- * @returns {string} Category: 'vowel', 'stop', 'fricative', 'nasal', 'glide', 'affricate', or 'consonant'
+ * @returns {string} Category: 'vowel', 'stop', 'fricative', 'nasal', 'glide', or 'consonant'
  */
 function getPhonemeCategory(basePhoneme) {
     const cleaned = cleanPhoneme(basePhoneme);
@@ -56,7 +56,6 @@ function getPhonemeCategory(basePhoneme) {
                 case 'F': return 'fricative';
                 case 'N': return 'nasal';
                 case 'G': return 'glide';
-                case 'A': return 'affricate';
             }
         }
     }

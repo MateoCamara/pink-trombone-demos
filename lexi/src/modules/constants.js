@@ -15,11 +15,10 @@ export const LANDMARK_MAP = {
     'N': ['m', 'n', 'ŋ'], // Nasals
     'F': ['v', 'ð', 'z', 'ʒ', 'f', 'θ', 's', 'ʃ', 'ʧ', 'tʃ'], // Fricatives
     'S': ['b', 'd', 'g', 'p', 't', 'k'], // Stops
-    'A': ['ʧ', 'ʤ'] // Affricates
 };
 
 // Landmark export format version
 export const LANDMARK_EXPORT_VERSION = '1.0';
 
 // Landmark types available for manual addition
-export const LANDMARK_TYPES = ['V', 'G', 'N', 'Nc', 'Nr', 'F', 'Fc', 'Fr', 'S', 'Sc', 'Sr'];
+export const LANDMARK_TYPES = ['V', 'G', 'Nc', 'Nr', 'Fc', 'Fr', 'Sc', 'Sr'];

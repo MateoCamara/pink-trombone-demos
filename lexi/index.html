@@ -46,12 +46,10 @@
 
         /* Container */
         .container {
-            display: grid;
-            grid-template-rows: auto auto auto auto auto auto;
-            gap: 0;
             padding: 20px 24px;
             max-width: 1400px;
             margin: 0 auto;
+            overflow-x: auto;
         }
 
         /* Canvases */
@@ -60,7 +58,6 @@
             border: 1px solid #2a2a2a;
             border-radius: 6px;
             display: block;
-            width: 100%;
         }
 
         #waveform {
@@ -185,7 +182,6 @@
         .timeline-segment.fricative { background: #ffd900; color: #333; }
         .timeline-segment.nasal { background: #1c50d3; }
         .timeline-segment.glide { background: #f39c12; }
-        .timeline-segment.affricate { background: #1abc9c; }
 
         .timeline-segment.hold::after {
             content: '';
@@ -202,6 +198,21 @@
                 rgba(0,0,0,0.25) 6px
             );
             pointer-events: none;
+        }
+
+        /* Energy Plot */
+        #energy-plot-container {
+            height: 100px;
+            position: relative;
+            margin: 0;
+            background: #111;
+            border-left: 1px solid #2a2a2a;
+            border-right: 1px solid #2a2a2a;
+            overflow: hidden;
+        }
+        #energy-plot {
+            display: block;
+            height: 100%;
         }
 
         /* Landmarks Container */
@@ -304,15 +315,6 @@
         .G .landmark-bar { background: #4ECDC4; }
         .G .landmark-label { background: #4ECDC4; }
 
-        .N .landmark-bar { background: #96CEB4; }
-        .N .landmark-label { background: #96CEB4; }
-
-        .F .landmark-bar { background: #FFEEAD; }
-        .F .landmark-label { color: #333; background: #FFEEAD; }
-
-        .S .landmark-bar { background: #45B7D1; }
-        .S .landmark-label { background: #45B7D1; }
-
         .Nc .landmark-bar { background: #1c50d3; }
         .Nr .landmark-bar { background: #80a0ff; }
         .Sc .landmark-bar { background: #ec00ff; }
@@ -326,9 +328,6 @@
         .Sr .landmark-label { background: #f9afff; color: #333; }
         .Fc .landmark-label { background: #ffd900; color: #333; }
         .Fr .landmark-label { background: #fff4c3; color: #333; }
-
-        .A .landmark-bar { background: #FFA577; }
-        .A .landmark-label { background: #FFA577; }
 
         /* Landmark Picker Popover */
         .landmark-picker {
@@ -364,9 +363,9 @@
 
         .picker-btn.V { border-color: #FF6B6B; color: #FF6B6B; }
         .picker-btn.G { border-color: #4ECDC4; color: #4ECDC4; }
-        .picker-btn.N, .picker-btn.Nc, .picker-btn.Nr { border-color: #96CEB4; color: #96CEB4; }
-        .picker-btn.F, .picker-btn.Fc, .picker-btn.Fr { border-color: #FFEEAD; color: #FFEEAD; }
-        .picker-btn.S, .picker-btn.Sc, .picker-btn.Sr { border-color: #45B7D1; color: #45B7D1; }
+        .picker-btn.Nc, .picker-btn.Nr { border-color: #96CEB4; color: #96CEB4; }
+        .picker-btn.Fc, .picker-btn.Fr { border-color: #FFEEAD; color: #FFEEAD; }
+        .picker-btn.Sc, .picker-btn.Sr { border-color: #45B7D1; color: #45B7D1; }
 
         /* Buttons */
         .button-bar {
@@ -415,7 +414,7 @@
     <h1>Lexi - Landmark Visualization</h1>
     <a href="../../">home</a>
 </div>
-<div class="container">
+<div class="container" id="container">
     <canvas id="waveform" width="1200" height="150"></canvas>
     <div class="fft-controls">
         <div class="control-group">
@@ -441,6 +440,9 @@
     <canvas id="spectrogram" width="1200" height="300"></canvas>
     <div id="phoneme-timeline-container">
         <div id="phoneme-timeline"></div>
+    </div>
+    <div id="energy-plot-container">
+        <canvas id="energy-plot" width="1200" height="100"></canvas>
     </div>
     <div id="landmarks-container">
         <div id="landmarks"></div>
