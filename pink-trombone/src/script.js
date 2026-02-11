@@ -2,7 +2,7 @@ const audioContext = new AudioContext();
 autoResumeAudioContext(audioContext);
 
 const pinkTromboneElement = document.querySelector("pink-trombone");
-let frontConstriction, backConstriction;
+let frontConstriction, backConstriction, noseConstriction;
 
 pinkTromboneElement.addEventListener("load", (event) => {
   pinkTromboneElement.setAudioContext(audioContext).then((pinkTrombone) => {
@@ -48,6 +48,9 @@ pinkTromboneElement.addEventListener("load", (event) => {
     frontConstriction._isEnabled = true;
     backConstriction = pinkTromboneElement.newConstriction(10.5, 1.8);
     pinkTromboneElement.backConstriction = backConstriction;
+    noseConstriction = pinkTromboneElement.newConstriction(22, 5);
+    pinkTromboneElement.noseConstriction = noseConstriction;
+    noseConstriction._isEnabled = true;
     if (typeof searchParams.get("dark") == "string") {
       toggleDarkMode();
     }
@@ -219,6 +222,12 @@ const { send } = setupConnection("pink-trombone", (message) => {
         break;
       case "backConstriction.diameter":
         node = backConstriction.diameter;
+        break;
+      case "noseConstriction.index":
+        node = noseConstriction.index;
+        break;
+      case "noseConstriction.diameter":
+        node = noseConstriction.diameter;
         break;
       case "tenseness":
         if (didSetVoiceness) {
@@ -424,6 +433,9 @@ const keyframeStrings = [
 
   "backConstriction.index",
   "backConstriction.diameter",
+
+  "noseConstriction.index",
+  "noseConstriction.diameter",
 
   "tenseness",
   "loudness",

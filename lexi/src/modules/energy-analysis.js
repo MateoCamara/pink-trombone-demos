@@ -162,37 +162,38 @@ export function refineLandmarkPositions(landmarks, audioBuffer, audioDuration) {
                     bestFrame = f;
                 }
             }
-        } else if (type === 'Sc' || type === 'Fc') {
-            // Find where energy drops to 40% of local peak (still some energy, about to close).
-            // Use mouth energy by default, but if mouth is negligible (e.g. stop after
-            // a nasal like /n/→/d/), fall back to nose energy — some signal must exist.
-            let mouthPeak = 0, nosePeak = 0;
-            for (let f = startFrame; f <= endFrame; f++) {
-                if (mouth[f] > mouthPeak) mouthPeak = mouth[f];
-                if (nose[f] > nosePeak) nosePeak = nose[f];
-            }
-            const signal = mouthPeak >= nosePeak ? mouth : nose;
-            let peakVal = 0;
-            let peakFrame = startFrame;
-            for (let f = startFrame; f <= endFrame; f++) {
-                if (signal[f] > peakVal) {
-                    peakVal = signal[f];
-                    peakFrame = f;
-                }
-            }
-            const threshold = peakVal * 0.40;
-            bestFrame = endFrame; // default to end if never crosses
-            for (let f = peakFrame; f <= endFrame; f++) {
-                if (signal[f] <= threshold) {
-                    bestFrame = f;
-                    break;
-                }
-            }
-        } else if (type === 'Sr' || type === 'Fr') {
-            // Release = where energy suddenly explodes (steepest rise from silence to energy)
+        } else if (type === 'Fc') {
+            // Fricative closure = where energy rises most steeply (max positive gradient, low→high transition)
             let bestVal = -Infinity;
             for (let f = startFrame; f <= endFrame; f++) {
                 if (mouthDeriv[f] > bestVal) {
+                    bestVal = mouthDeriv[f];
+                    bestFrame = f;
+                }
+            }
+        } else if (type === 'Sc') {
+            // Stop closure = max negative mouth gradient (steepest drop in oral energy)
+            let bestVal = Infinity;
+            for (let f = startFrame; f <= endFrame; f++) {
+                if (mouthDeriv[f] < bestVal) {
+                    bestVal = mouthDeriv[f];
+                    bestFrame = f;
+                }
+            }
+        } else if (type === 'Sr') {
+            // Stop release = energy burst (max positive gradient, silence→energy explosion)
+            let bestVal = -Infinity;
+            for (let f = startFrame; f <= endFrame; f++) {
+                if (mouthDeriv[f] > bestVal) {
+                    bestVal = mouthDeriv[f];
+                    bestFrame = f;
+                }
+            }
+        } else if (type === 'Fr') {
+            // Fricative release = where energy drops most steeply (max negative gradient, high→low transition)
+            let bestVal = Infinity;
+            for (let f = startFrame; f <= endFrame; f++) {
+                if (mouthDeriv[f] < bestVal) {
                     bestVal = mouthDeriv[f];
                     bestFrame = f;
                 }

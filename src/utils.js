@@ -465,10 +465,30 @@ const phonemes = {
     voiced: true,
     graphemes: ["ng", "n", "ngue"],
     example: "ring",
+    tenseness: 0.691,
+    loudness: 0.912,
+    nasalStop: true,
     holdTime: 0.01,
-    offsetBetweenSubPhonemes: 0,
+    offsetBetweenSubPhonemes: 0.01,
     constrictions: [
       {
+        // Phase 0: nasal-oral overlap — nose opens velum, back stays OPEN
+        tongue: {
+          index: 22.66060447692871,
+          diameter: 1.5032392740249634,
+        },
+        back: {
+          index: 22.110883712768555,
+          diameter: 1.5,
+        },
+        nose: {
+          index: 22.110883712768555,
+          diameter: -5,
+        },
+        duration: 0.15,
+      },
+      {
+        // Phase 1: velar closure (back closes, nose keeps velum open)
         tongue: {
           index: 22.66060447692871,
           diameter: 1.5032392740249634,
@@ -477,8 +497,13 @@ const phonemes = {
           index: 22.110883712768555,
           diameter: -1.3278001546859741,
         },
+        nose: {
+          index: 22.110883712768555,
+          diameter: -5,
+        },
       },
       {
+        // Phase 2: guttural stop release
         tongue: {
           index: 22.66060447692871,
           diameter: 1.5032392740249634,
@@ -1139,6 +1164,7 @@ const generateKeyframes = (pronunciation) => {
         timeDelta: "duration" in constriction ? constriction.duration : defaultTimeDelta,
         "frontConstriction.diameter": 5,
         "backConstriction.diameter": 5,
+        "noseConstriction.diameter": 5,
       };
 
       let voiceness = defaultVoiceness;
@@ -1179,10 +1205,15 @@ const generateKeyframes = (pronunciation) => {
       _keyframes.push(holdKeyframe);
 
       // For stop consonants (not word-initial), set closure phase to silent
-      // Exception: word-initial stops (phonemeIndex == 0) keep original behavior
-      if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0) {
+      // Exception: word-initial stops (phonemeIndex == 0) and nasalStop phonemes (ŋ) keep intensity
+      if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0 && !phonemeInfo.nasalStop) {
         _keyframes[_keyframes.length - 2].intensity = 0;  // X(0)
         _keyframes[_keyframes.length - 1].intensity = 0;  // X(0)]
+      }
+      // Force intensity=1 for nasalStop phonemes (ŋ) — nasal needs airflow
+      if (constrictionIndex == 0 && phonemeInfo.nasalStop) {
+        _keyframes[_keyframes.length - 2].intensity = 1;
+        _keyframes[_keyframes.length - 1].intensity = 1;
       }
     });
     keyframes.push(..._keyframes);

@@ -157,7 +157,32 @@ function generateAutoLandmarks(phonemeData, audioDuration) {
             const isUtteranceInitial = groupIndex === 0;
 
             if (isMultiPhase) {
-                // Multi-phase consonants (stops b,d,g,p,t,k and velar nasal ŋ):
+                // Check if this is a nasal-stop hybrid (ŋ)
+                const isNasalStop = type === 'N' && parsed.some(p => p.subphoneme !== null);
+
+                if (isNasalStop) {
+                    // Nasal-stop (ŋ): Nc/Sc from phase 0 (closure), Sr/Nr from phase 1 (release)
+                    // Phase 0: oral closes + velum opens → Nc at onset, Sc at hold (energy drop seed)
+                    // Phase 1: oral opens + velum may close → Sr at onset (energy rise seed), Nr at hold
+                    const nasalOnset = elements.find((_, i) => parsed[i].subphoneme === 0 && !parsed[i].trailingClosure);
+                    const stopClosure = elements.find((_, i) => parsed[i].subphoneme === 0 && parsed[i].trailingClosure);
+                    const stopRelease = elements.find((_, i) => parsed[i].subphoneme === 1 && !parsed[i].trailingClosure);
+                    const nasalRelease = elements.find((_, i) => parsed[i].subphoneme === 1 && parsed[i].trailingClosure);
+
+                    if (nasalOnset && !isUtteranceInitial) {
+                        landmarks.push({ type: 'Nc', time: nasalOnset.time, name: nasalOnset.name, source: 'auto', originalTime: nasalOnset.time });
+                    }
+                    if (stopClosure) {
+                        landmarks.push({ type: 'Sc', time: stopClosure.time, name: stopClosure.name, source: 'auto', originalTime: stopClosure.time });
+                    }
+                    if (stopRelease) {
+                        landmarks.push({ type: 'Sr', time: stopRelease.time, name: stopRelease.name, source: 'auto', originalTime: stopRelease.time });
+                    }
+                    if (nasalRelease) {
+                        landmarks.push({ type: 'Nr', time: nasalRelease.time, name: nasalRelease.name, source: 'auto', originalTime: nasalRelease.time });
+                    }
+                } else {
+                // Multi-phase consonants (stops b,d,g,p,t,k):
                 // Closure = subphoneme 0 non-hold keyframe time
                 // Release = subphoneme 1 non-hold keyframe time
                 const closureKf = elements.find((_, i) =>
@@ -178,6 +203,7 @@ function generateAutoLandmarks(phonemeData, audioDuration) {
                         type: `${type}r`, time: releaseKf.time, name: releaseKf.name,
                         source: 'auto', originalTime: releaseKf.time
                     });
+                }
                 }
             } else {
                 // Single-phase consonants (nasals m,n and all fricatives):

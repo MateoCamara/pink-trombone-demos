@@ -469,8 +469,9 @@ const phonemes = {
     voiced: true,
     graphemes: ["ng", "n", "ngue"],
     example: "ring",
+    nasalStop: true,
     holdTime: 0.01,
-    offsetBetweenSubPhonemes: 0,
+    offsetBetweenSubPhonemes: 0.01,
     constrictions: [
       {
         tongue: {
@@ -1143,6 +1144,7 @@ const generateKeyframes = (pronunciation) => {
         timeDelta: "duration" in constriction ? constriction.duration : defaultTimeDelta,
         "frontConstriction.diameter": 5,
         "backConstriction.diameter": 5,
+        "noseConstriction.diameter": 5,
       };
 
       let voiceness = defaultVoiceness;
@@ -1183,8 +1185,8 @@ const generateKeyframes = (pronunciation) => {
       _keyframes.push(holdKeyframe);
 
       // For stop consonants (not word-initial), set closure phase to silent
-      // Exception: word-initial stops (phonemeIndex == 0) keep original behavior
-      if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0) {
+      // Exception: word-initial stops (phonemeIndex == 0) and nasalStop phonemes (ŋ)
+      if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0 && !phonemeInfo.nasalStop) {
         _keyframes[_keyframes.length - 2].intensity = 0;  // X(0)
         _keyframes[_keyframes.length - 1].intensity = 0;  // X(0)]
       }

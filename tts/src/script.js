@@ -482,6 +482,7 @@ const createResultContainer = () => {
             timeDelta: defaultTimeDelta,
             "frontConstriction.diameter": 5,
             "backConstriction.diameter": 5,
+            "noseConstriction.diameter": 5,
           };
 
           let voiceness = defaultVoiceness;
@@ -530,8 +531,8 @@ const createResultContainer = () => {
           }
 
           // For stop consonants (not word-initial), set closure phase to silent
-          // Exception: word-initial stops (phonemeIndex == 0) keep original behavior
-          if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0) {
+          // Exception: word-initial stops (phonemeIndex == 0) and nasalStop phonemes (ŋ)
+          if (constrictionIndex == 0 && type == "consonant" && constrictions.length > 1 && phonemeIndex > 0 && !phonemeInfo.nasalStop) {
             _keyframes[_keyframes.length - 2].intensity = 0;  // X(0)
             _keyframes[_keyframes.length - 1].intensity = 0;  // X(0)]
           }
@@ -569,8 +570,19 @@ const createResultContainer = () => {
                   }
                 }
               }
+              // For fricatives (single constriction), only apply tongue position
+              // from the vowel — preserve front/back constriction that produces frication noise
+              const isFricative = constrictions.length === 1;
               _keyframes.forEach((kf) => {
-                Object.assign(kf, vowelProperties);
+                if (isFricative) {
+                  for (const prop in vowelProperties) {
+                    if (prop.startsWith("tongue.")) {
+                      kf[prop] = vowelProperties[prop];
+                    }
+                  }
+                } else {
+                  Object.assign(kf, vowelProperties);
+                }
               });
             }
           }
