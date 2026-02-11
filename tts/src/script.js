@@ -570,18 +570,15 @@ const createResultContainer = () => {
                   }
                 }
               }
-              // For fricatives (single constriction), only apply tongue position
-              // from the vowel — preserve front/back constriction that produces frication noise
-              const isFricative = constrictions.length === 1;
+              // First-consonant coarticulation: only apply tongue body position
+              // from the following vowel. Preserve front/back constrictions that
+              // produce the consonant's articulatory mechanism (stop closure,
+              // frication noise, etc.).
               _keyframes.forEach((kf) => {
-                if (isFricative) {
-                  for (const prop in vowelProperties) {
-                    if (prop.startsWith("tongue.")) {
-                      kf[prop] = vowelProperties[prop];
-                    }
+                for (const prop in vowelProperties) {
+                  if (prop.startsWith("tongue.")) {
+                    kf[prop] = vowelProperties[prop];
                   }
-                } else {
-                  Object.assign(kf, vowelProperties);
                 }
               });
             }

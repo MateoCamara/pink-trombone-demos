@@ -51,6 +51,9 @@ pinkTromboneElement.addEventListener("load", (event) => {
     noseConstriction = pinkTromboneElement.newConstriction(22, 5);
     pinkTromboneElement.noseConstriction = noseConstriction;
     noseConstriction._isEnabled = true;
+    // Start quiet: set intensity to 0 and toggle voice button to "off"
+    pinkTromboneElement.intensity.value = 0.0001;
+    pinkTromboneElement.UI._buttonsUI._buttons.voice.click();
     if (typeof searchParams.get("dark") == "string") {
       toggleDarkMode();
     }
@@ -153,7 +156,7 @@ const updateConstriction = throttle(() => {
     };
   } else {
     const { index, diameter } = deconstructConstriction(
-      pinkTromboneElement.pinkTrombone._pinkTromboneNode._constrictions[2]
+      pinkTromboneElement.pinkTrombone._pinkTromboneNode._constrictions[3]
     );
     if (!(index == 0 && diameter == 0)) {
       const isBackConstriction = index < getIndexThreshold();

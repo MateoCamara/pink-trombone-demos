@@ -135,12 +135,23 @@ export function refineLandmarkPositions(landmarks, audioBuffer, audioDuration) {
         // Type-specific strategy
         let bestFrame = -1;
 
-        if (type === 'V' || type === 'G') {
+        if (type === 'V') {
             // Find peak mouth energy
             let bestVal = -Infinity;
             for (let f = startFrame; f <= endFrame; f++) {
                 if (mouth[f] > bestVal) {
                     bestVal = mouth[f];
+                    bestFrame = f;
+                }
+            }
+        } else if (type === 'G') {
+            // Glides transition between resonance states — find max |derivative|
+            // (steepest rate of change in mouth energy, rising or falling)
+            let bestVal = -Infinity;
+            for (let f = startFrame; f <= endFrame; f++) {
+                const absD = Math.abs(mouthDeriv[f]);
+                if (absD > bestVal) {
+                    bestVal = absD;
                     bestFrame = f;
                 }
             }

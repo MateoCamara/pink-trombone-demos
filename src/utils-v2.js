@@ -248,7 +248,7 @@ const phonemes = {
         diameter: 0.5175557136535645,
       },
       tongue: {
-        index: 28.93478775024414,
+        index: 42.200,
         diameter: 2.8312392234802246,
       },
     },
