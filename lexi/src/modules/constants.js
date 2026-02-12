@@ -1,10 +1,11 @@
 // Configuration constants for LEXI module
 
-export const FFT_SIZE = 512;
+export const FFT_SIZE = 2048;
 export const VERTICAL_MARGIN_PERCENT = 0.95; // 5% margin on each side
 
 export const SPECTROGRAM_MIN_DB = -100;
-export const SPECTROGRAM_MAX_DB = 0;
+export const SPECTROGRAM_MAX_DB = 10;
+export const SPECTROGRAM_MAX_FREQ = 8000;
 
 export const PHONEME_OVERLAP_THRESHOLD = 50; // pixels
 

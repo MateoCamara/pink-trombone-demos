@@ -421,9 +421,10 @@
             <label for="fft-size">FFT Size</label>
             <select id="fft-size">
                 <option value="256">256</option>
-                <option value="512" selected>512</option>
+                <option value="512">512</option>
                 <option value="1024">1024</option>
-                <option value="2048">2048</option>
+                <option value="2048" selected>2048</option>
+                <option value="4096">4096</option>
             </select>
         </div>
         <div class="control-group">
@@ -433,8 +434,8 @@
         </div>
         <div class="control-group">
             <label for="max-db">Max dB</label>
-            <input type="range" id="max-db" min="-20" max="0" value="0" step="1">
-            <span class="db-value" id="max-db-value">0 dB</span>
+            <input type="range" id="max-db" min="-20" max="10" value="10" step="1">
+            <span class="db-value" id="max-db-value">10 dB</span>
         </div>
     </div>
     <canvas id="spectrogram" width="1200" height="300"></canvas>

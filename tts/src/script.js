@@ -570,14 +570,15 @@ const createResultContainer = () => {
                   }
                 }
               }
-              // First-consonant coarticulation: only apply tongue body position
-              // from the following vowel. Preserve front/back constrictions that
-              // produce the consonant's articulatory mechanism (stop closure,
-              // frication noise, etc.).
+              // First-consonant coarticulation: apply tongue body from the
+              // following vowel (avoids glide artifact), but always preserve
+              // front/back constrictions (stop closure, frication, etc.).
+              // Phonemes with preserveTongue skip tongue coarticulation.
+              const skipTongue = phonemeInfo.preserveTongue === true;
               _keyframes.forEach((kf) => {
                 for (const prop in vowelProperties) {
                   if (prop.startsWith("tongue.")) {
-                    kf[prop] = vowelProperties[prop];
+                    if (!skipTongue) kf[prop] = vowelProperties[prop];
                   }
                 }
               });

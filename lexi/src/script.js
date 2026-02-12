@@ -76,6 +76,7 @@ function renderAll() {
 
     // Trim audio to [trimStart, trimEnd]
     state.audioBuffer = trimAudioBufferRange(state.rawAudioBuffer, state.trimStart, state.trimEnd, audioContext);
+    window.__lexiAudioDuration = state.audioBuffer.duration;
 
     // Compute canvas width: use a minimum pixels-per-second so long utterances scroll
     const container = document.getElementById('container');
@@ -245,10 +246,11 @@ window.saveAll = function() {
     }
 };
 
-// Expose data for batch extraction (Puppeteer)
-window.getCurrentAudio = function() {
+// Expose data for batch extraction (Puppeteer/Playwright)
+window.getCurrentAudio = async function() {
     if (state.audioBuffer) {
-        return encodeWAV(state.audioBuffer);
+        const blob = encodeWAV(state.audioBuffer);
+        return await blob.arrayBuffer();
     }
     return state.currentAudioBlob;
 };
@@ -266,6 +268,8 @@ window.getCurrentLandmarks = function() {
 window.isLexiReady = function() {
     return state.audioBuffer !== null && getLandmarkStore().length > 0;
 };
+
+window.__lexiAudioDuration = 0;
 
 window.getCalculatedLandmarks = function() {
     return getExportLandmarks();

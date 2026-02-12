@@ -62,7 +62,11 @@ export function drawLandmarks(phonemeData, audioDuration, canvasWidth, audioBuff
     landmarkStore = landmarkStore.filter(lm => lm.source === 'user');
 
     // Generate auto-detected landmarks
-    const autoLandmarks = generateAutoLandmarks(phonemeData, audioDuration);
+    let autoLandmarks = generateAutoLandmarks(phonemeData, audioDuration);
+
+    // Merge consecutive identical vowel landmarks into one at midpoint
+    // (handles doubled vowels like "ii" for demonstrative elongation)
+    autoLandmarks = mergeConsecutiveVowels(autoLandmarks);
 
     // Refine positions using energy envelopes (if audio available)
     if (audioBuffer) {
@@ -233,6 +237,35 @@ function generateAutoLandmarks(phonemeData, audioDuration) {
     });
 
     return landmarks;
+}
+
+/**
+ * Merge consecutive vowel landmarks of the same phoneme into one at the midpoint.
+ * Handles doubled vowels (e.g., "ii" for elongated beat) so only one V appears.
+ */
+function mergeConsecutiveVowels(landmarks) {
+    const merged = [];
+    let i = 0;
+    while (i < landmarks.length) {
+        if (landmarks[i].type === 'V' && i + 1 < landmarks.length &&
+            landmarks[i + 1].type === 'V') {
+            const base1 = cleanPhoneme(parsePhonemeName(landmarks[i].name).base);
+            const base2 = cleanPhoneme(parsePhonemeName(landmarks[i + 1].name).base);
+            if (base1 === base2) {
+                const midTime = (landmarks[i].time + landmarks[i + 1].time) / 2;
+                merged.push({
+                    ...landmarks[i],
+                    time: midTime,
+                    originalTime: midTime,
+                });
+                i += 2;
+                continue;
+            }
+        }
+        merged.push(landmarks[i]);
+        i++;
+    }
+    return merged;
 }
 
 /**

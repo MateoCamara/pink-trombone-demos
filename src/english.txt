@@ -9443,7 +9443,7 @@ beastie		biˈsti
 beastly		biˈstliˌ
 beaston		biˈstʌn
 beasts			biˈsts
-beat			biˈt
+beat			biiˈt
 beata			biæˈtʌ
 beaten			biˈtʌn
 beater			biˈtɚ
@@ -68348,7 +68348,7 @@ leagues'		liˈgz
 leah			liˈʌ
 leahey			lejˈhi
 leahy			lejˈhi
-leak			liˈk
+leak			liiˈk
 leakage		liˈkʌʤ
 leakage(1)		liˈkɪʤ
 leake			liˈk
@@ -89456,7 +89456,7 @@ peek			piˈk
 peeked			piˈkt
 peeking		piˈkɪŋ
 peeks			piˈks
-peel			piˈl
+peel			piiˈl
 peele			piˈl
 peeled			piˈld
 peeler			piˈlɚ
@@ -106800,7 +106800,7 @@ seasonings		siˈzʌnɪŋz
 seasons		siˈzʌnz
 seastrand		siˈstɹæˌnd
 seastrom		siˈstɹʌm
-seat			siˈt
+seat			siiˈt
 seat's			siˈts
 seatbelt		siˈtbɛˌlt
 seatbelts		siˈtbɛˌlts
@@ -108532,7 +108532,7 @@ sheen			ʃiˈn
 sheen's		ʃiˈnz
 sheena			ʃiˈnʌ
 sheens			ʃiˈnz
-sheep			ʃiˈp
+sheep			ʃiiˈp
 sheep's		ʃiˈps
 sheepish		ʃiˈpɪʃ
 sheepishly		ʃiˈpɪʃli

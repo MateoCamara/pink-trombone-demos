@@ -2,7 +2,7 @@
 
 import { FFT, createHannWindow } from './fft.js';
 import { getColorPalette } from './colors.js';
-import { FFT_SIZE, SPECTROGRAM_MIN_DB, SPECTROGRAM_MAX_DB } from './constants.js';
+import { FFT_SIZE, SPECTROGRAM_MIN_DB, SPECTROGRAM_MAX_DB, SPECTROGRAM_MAX_FREQ } from './constants.js';
 
 // Pre-computed resources cache
 let hannWindow = null;
@@ -41,7 +41,11 @@ export function drawSpectrogram(canvas, audioBuffer, audioContext, options = {})
     const hopSize = Math.max(1, maxHopSize);
     const totalFrames = Math.ceil((data.length - fftSize) / hopSize) + 1;
 
-    const nativeHeight = fftSize / 2;
+    const halfFft = fftSize / 2;
+    const maxFreq = options.maxFreq || SPECTROGRAM_MAX_FREQ;
+    const sampleRate = audioContext.sampleRate || audioBuffer.sampleRate || 48000;
+    const maxBin = Math.min(halfFft, Math.ceil(maxFreq / (sampleRate / fftSize)));
+    const nativeHeight = maxBin;
 
     // Render to offscreen canvas at native FFT resolution, then scale to display height
     const offscreen = new OffscreenCanvas(desiredWidth, nativeHeight);

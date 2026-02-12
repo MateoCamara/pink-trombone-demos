@@ -242,6 +242,7 @@ const phonemes = {
     voiced: true,
     graphemes: ["j", "ge", "g", "dge", "di", "gg"],
     example: "jam",
+    preserveTongue: true,
     constrictions: {
       front: {
         index: 31.48894500732422,
@@ -258,6 +259,20 @@ const phonemes = {
     graphemes: ["k", "c", "ch", "cc", "lk", "qu", "q(u)", "ck", "x"],
     example: "kit",
     alternative: "g",
+    constrictions: [
+      {
+        back: { index: 22.009140014648438, diameter: 0.17730380594730377 },
+        tongue: { index: 14.824607849121094, diameter: 2.7940967082977295 },
+        duration: 0.005,
+        holdTime: 0.01,
+      },
+      {
+        back: { index: 22.009140014648438, diameter: 0.7 },
+        tongue: { index: 14.824607849121094, diameter: 2.7940967082977295 },
+        duration: 0.005,
+        holdTime: 0.01,
+      },
+    ],
   },
   l: {
     voiced: true,
@@ -270,7 +285,7 @@ const phonemes = {
       },
       front: {
         index: 37.93798828125,
-        diameter: 1.1625759601593018,
+        diameter: 0.6,
       },
     },
   },
@@ -867,7 +882,9 @@ for (const phoneme in phonemes) {
   if ("alternative" in phonemeInfo) {
     const alternative = phonemes[phonemeInfo.alternative];
     alternative.alternative = phoneme;
-    phonemeInfo.constrictions = alternative.constrictions;
+    if (!phonemeInfo.constrictions) {
+      phonemeInfo.constrictions = alternative.constrictions;
+    }
   }
   phonemeInfo.type = "voiced" in phonemeInfo ? "consonant" : "vowel";
 
