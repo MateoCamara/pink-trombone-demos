@@ -117,8 +117,8 @@ export function trimAudioBufferRange(audioBuffer, startSeconds, endSeconds, ctx)
  * @param {AudioBuffer} audioBuffer - Audio buffer to encode
  * @returns {Blob} WAV file blob
  */
-export function encodeWAV(audioBuffer) {
-    const numChannels = audioBuffer.numberOfChannels;
+export function encodeWAV(audioBuffer, { mono = true } = {}) {
+    const numChannels = mono ? 1 : audioBuffer.numberOfChannels;
     const sampleRate = audioBuffer.sampleRate;
     const bitsPerSample = 16;
     const bytesPerSample = bitsPerSample / 8;

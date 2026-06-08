@@ -5,11 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node index.js --test hello",
-    "test-batch": "node index.js --test-batch 10"
+    "test": "node index.js --word hello",
+    "test-batch": "node index.js --limit 10"
   },
   "dependencies": {
-    "playwright": "^1.58.1",
-    "puppeteer": "^21.0.0"
+    "playwright": "^1.58.1"
   }
 }

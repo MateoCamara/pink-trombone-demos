@@ -6,3 +6,7 @@ edge-impulse-standalone.wasm
 /.idea/modules.xml
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/vcs.xml
+
+desktop.ini
+**/desktop.ini
+*.7z

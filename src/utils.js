@@ -142,17 +142,18 @@ const phonemes = {
       {
         front: {
           index: 41.10761642456055,
-          diameter: 0.088,
+          diameter: 0.05,
         },
-        // b(0), b(0)] use defaults (no p(0) in p.json)
+        duration: 0.03,
+        holdTime: 0.015,
       },
       {
         front: {
           index: 41.10761642456055,
-          diameter: 0.9,
+          diameter: 1.2,
         },
-        duration: 0.01,  // p(1) lasts 10ms (from p.json p(1) duration_ms)
-        holdTime: 0.041, // p(1)] lasts 41ms (from p.json p(1)] duration_ms)
+        duration: 0.01,
+        holdTime: 0.041,
       },
     ],
   },
@@ -202,22 +203,26 @@ const phonemes = {
       {
         back: {
           index: 22.009140014648438,
-          diameter: 0.17730380594730377,
+          diameter: 0.1,
         },
         tongue: {
           index: 14.824607849121094,
           diameter: 2.7940967082977295,
         },
+        duration: 0.04,
+        holdTime: 0.015,
       },
       {
         back: {
           index: 22.009140014648438,
-          diameter: 0.7,
+          diameter: 1.0,
         },
         tongue: {
           index: 14.824607849121094,
           diameter: 2.7940967082977295,
         },
+        duration: 0.01,
+        holdTime: 0.03,
       },
     ],
   },
@@ -261,13 +266,13 @@ const phonemes = {
     alternative: "g",
     constrictions: [
       {
-        back: { index: 22.009140014648438, diameter: 0.17730380594730377 },
+        back: { index: 22.009140014648438, diameter: 0.1 },
         tongue: { index: 14.824607849121094, diameter: 2.7940967082977295 },
         duration: 0.005,
         holdTime: 0.01,
       },
       {
-        back: { index: 22.009140014648438, diameter: 0.7 },
+        back: { index: 22.009140014648438, diameter: 1.0 },
         tongue: { index: 14.824607849121094, diameter: 2.7940967082977295 },
         duration: 0.005,
         holdTime: 0.01,
@@ -365,7 +370,7 @@ const phonemes = {
         index: 26.1,
         diameter: 3.578,
       },
-      duration: 0.01, // from s.json s duration_ms: 10
+      duration: 0.1, // s onset: 100ms
     },
   },
   t: {
@@ -487,38 +492,20 @@ const phonemes = {
     offsetBetweenSubPhonemes: 0.01,
     constrictions: [
       {
-        // Phase 0: nasal-oral overlap — nose opens velum, back stays OPEN
+        // Phase 0: nasal overlap (partial closure, oral+nasal coexist)
         tongue: {
           index: 22.66060447692871,
           diameter: 1.5032392740249634,
         },
         back: {
           index: 22.110883712768555,
-          diameter: 1.5,
+          diameter: -0.6,
         },
-        nose: {
-          index: 22.110883712768555,
-          diameter: -5,
-        },
-        duration: 0.15,
+        duration: 0.05,
+        holdTime: 0.04,
       },
       {
-        // Phase 1: velar closure (back closes, nose keeps velum open)
-        tongue: {
-          index: 22.66060447692871,
-          diameter: 1.5032392740249634,
-        },
-        back: {
-          index: 22.110883712768555,
-          diameter: -1.3278001546859741,
-        },
-        nose: {
-          index: 22.110883712768555,
-          diameter: -5,
-        },
-      },
-      {
-        // Phase 2: guttural stop release
+        // Phase 1: guttural stop release (back opens quickly)
         tongue: {
           index: 22.66060447692871,
           diameter: 1.5032392740249634,
@@ -551,6 +538,7 @@ const phonemes = {
         index: 14.0070161819458,
         diameter: 2.887047290802002,
       },
+      duration: 0.12,
     },
   },
   eɪ: {
@@ -562,12 +550,14 @@ const phonemes = {
           index: 26.89008140563965,
           diameter: 3.052640914916992,
         },
+        duration: 0.12,
       },
       {
         tongue: {
           index: 31.231204986572266,
           diameter: 2.109241247177124,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -579,6 +569,7 @@ const phonemes = {
         index: 23.29936981201172,
         diameter: 3.968519687652588,
       },
+      duration: 0.12,
     },
   },
   i: {
@@ -589,6 +580,7 @@ const phonemes = {
         index: 33.49000549316406,
         diameter: 2.0898075103759766,
       },
+      duration: 0.12,
     },
   },
   ɪ: {
@@ -599,6 +591,7 @@ const phonemes = {
         index: 27.176782608032227,
         diameter: 2.5782177448272705,
       },
+      duration: 0.12,
     },
   },
   aɪ: {
@@ -610,12 +603,14 @@ const phonemes = {
           index: 11.638107299804688,
           diameter: 2.3857390880584717,
         },
+        duration: 0.12,
       },
       {
         tongue: {
           index: 27.904165267944336,
           diameter: 1.9339886903762817,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -627,6 +622,7 @@ const phonemes = {
         index: 1.551837682723999,
         diameter: 1.551837682723999,
       },
+      duration: 0.12,
     },
   },
   oʊ: {
@@ -642,6 +638,7 @@ const phonemes = {
           index: 39.3746337890625,
           diameter: 2.0207254886627197,
         },
+        duration: 0.12,
       },
       {
         tongue: {
@@ -652,6 +649,7 @@ const phonemes = {
           index: 39.3746337890625,
           diameter: 0.8177579045295715,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -667,6 +665,7 @@ const phonemes = {
         index: 40.496360778808594,
         diameter: 1.107533574104309,
       },
+      duration: 0.12,
     },
   },
   ʌ: {
@@ -677,6 +676,7 @@ const phonemes = {
         index: 17.742313385009766,
         diameter: 2.5167031288146973,
       },
+      duration: 0.12,
     },
   },
   u: {
@@ -691,6 +691,7 @@ const phonemes = {
         index: 39.59186553955078,
         diameter: 0.7746905088424683,
       },
+      duration: 0.12,
     },
   },
   ɔɪ: {
@@ -702,12 +703,14 @@ const phonemes = {
           index: 15.181169509887695,
           diameter: 2.1677639484405518,
         },
+        duration: 0.12,
       },
       {
         tongue: {
           index: 34.00770568847656,
           diameter: 1.9233624935150146,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -724,6 +727,7 @@ const phonemes = {
           index: 41.25259780883789,
           diameter: 2.1377410888671875,
         },
+        duration: 0.12,
       },
       {
         tongue: {
@@ -734,6 +738,7 @@ const phonemes = {
           index: 41.25259780883789,
           diameter: 1.009834885597229,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -746,6 +751,7 @@ const phonemes = {
           index: 20.785303115844727,
           diameter: 2.817857027053833,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -780,6 +786,7 @@ const phonemes = {
           index: 30.626760482788086,
           diameter: 2.7641139030456543,
         },
+        duration: 0.12,
       },
       {
         tongue: {
@@ -790,6 +797,7 @@ const phonemes = {
           index: 30.626760482788086,
           diameter: 0.8193863034248352,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -806,6 +814,7 @@ const phonemes = {
           index: 29.416595458984375,
           diameter: 2.8466663360595703,
         },
+        duration: 0.12,
       },
       {
         tongue: {
@@ -816,6 +825,7 @@ const phonemes = {
           index: 30.795530319213867,
           diameter: 0.9675944447517395,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -831,6 +841,7 @@ const phonemes = {
         index: 31.35202980041504,
         diameter: 1.0647456645965576,
       },
+      duration: 0.12,
     },
   },
   ɔ: {
@@ -841,6 +852,7 @@ const phonemes = {
         index: 8.689467430114746,
         diameter: 1.7290281057357788,
       },
+      duration: 0.12,
     },
   },
   ɪəʳ: {
@@ -856,6 +868,7 @@ const phonemes = {
           index: 31.535709381103516,
           diameter: 2.8012807369232178,
         },
+        duration: 0.12,
       },
       {
         tongue: {
@@ -866,6 +879,7 @@ const phonemes = {
           index: 32.213191986083984,
           diameter: 0.8435457944869995,
         },
+        duration: 0.12,
       },
     ],
   },
@@ -882,6 +896,7 @@ const phonemes = {
           index: 41.00702667236328,
           diameter: 0.8688546419143677,
         },
+        duration: 0.12,
       },
       {
         tongue: {
@@ -892,6 +907,7 @@ const phonemes = {
           index: 30.037519454956055,
           diameter: 0.913703441619873,
         },
+        duration: 0.12,
       },
     ],
   },

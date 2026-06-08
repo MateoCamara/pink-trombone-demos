@@ -12,7 +12,7 @@ const config = {
   voice: { frequency: 140, tractLength: 44 },
   outputDir: './website',
   synthesisTimeout: 15000,
-  overwrite: true  // Regenerate all files with landmarks on images
+  overwrite: true  // Regenerate all files (onset padding fix)
 };
 
 // Word list organized by category (from supervisor's email)

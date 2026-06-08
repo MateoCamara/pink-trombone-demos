@@ -442,7 +442,7 @@ export function getExportLandmarks() {
  * @param {number} duration - Audio duration (optional)
  * @returns {boolean} Success status
  */
-export function downloadLandmarks(sampleRate = null, duration = null) {
+export function downloadLandmarks(sampleRate = null, duration = null, filename = null) {
     const landmarks = getExportLandmarks();
     if (landmarks.length === 0) {
         alert('No landmarks calculated to download.');
@@ -464,7 +464,7 @@ export function downloadLandmarks(sampleRate = null, duration = null) {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `landmarks_${new Date().toISOString().slice(0, 19)}.json`;
+        a.download = filename || `landmarks_${new Date().toISOString().slice(0, 19)}.json`;
         document.body.appendChild(a);
         a.click();
 

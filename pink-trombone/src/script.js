@@ -29,16 +29,11 @@ pinkTromboneElement.addEventListener("load", (event) => {
       ptNode.connect(splitter);
       splitter.connect(audioContext.destination, 0);
 
-      // Recording: preserve both channels
-      const recordingOutput = audioContext.createGain();
-      recordingOutput.channelCount = 2;
-      recordingOutput.channelCountMode = 'explicit';
-      ptNode.connect(recordingOutput);
-      pinkTromboneElement.recordingOutput = recordingOutput;
-
+      // Recording: capture both channels (ch0=combined, ch1=nose)
       mediaStreamDest = audioContext.createMediaStreamDestination();
       mediaStreamDest.channelCount = 2;
-      recordingOutput.connect(mediaStreamDest);
+      mediaStreamDest.channelCountMode = 'explicit';
+      ptNode.connect(mediaStreamDest);
       mediaRecorder = new MediaRecorder(mediaStreamDest.stream);
 
     }
@@ -348,7 +343,7 @@ const { send } = setupConnection("pink-trombone", (message) => {
         if (keyframes && keyframes.length > 0) {
           startRecording();
           const duration = playKeyframes(keyframes);
-          setTimeout(() => stopRecordingAndSend(), duration * 1000)
+          setTimeout(() => stopRecordingAndSend(), duration * 1000 + 500)
         }
         break;
       default:

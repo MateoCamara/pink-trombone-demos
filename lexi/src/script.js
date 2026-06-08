@@ -63,16 +63,27 @@ async function handleMessage(message) {
 function renderAll() {
     const audioContext = getAudioContext();
 
-    // Compute trim start: use first non-silent keyframe time if available
+    // Compute trim start: use the earlier of RMS-detected onset and first keyframe
+    // (Pink Trombone can produce energy before the first keyframe fires)
+    const rmsOnset = detectSilenceOffset(state.rawAudioBuffer);
     if (state.phonemeData?.keyframes) {
         const firstPhoneme = state.phonemeData.keyframes.find(kf => kf.name !== '.');
-        state.trimStart = firstPhoneme ? firstPhoneme.time : detectSilenceOffset(state.rawAudioBuffer);
+        state.trimStart = firstPhoneme ? Math.min(firstPhoneme.time, rmsOnset) : rmsOnset;
     } else {
-        state.trimStart = detectSilenceOffset(state.rawAudioBuffer);
+        state.trimStart = rmsOnset;
     }
 
-    // Compute trim end: detect where signal drops to silence from the tail
+    // Compute trim end: detect where signal drops to silence from the tail,
+    // but ensure we keep audio through the last keyframe (voiceless stop
+    // closures create silence that can confuse the detector)
     state.trimEnd = detectSilenceEnd(state.rawAudioBuffer);
+    if (state.phonemeData?.keyframes?.length) {
+        const lastKf = state.phonemeData.keyframes[state.phonemeData.keyframes.length - 1];
+        if (lastKf) {
+            const lastKfEnd = Math.min(lastKf.time + 0.15, state.rawAudioBuffer.duration);
+            state.trimEnd = Math.max(state.trimEnd, lastKfEnd);
+        }
+    }
 
     // Trim audio to [trimStart, trimEnd]
     state.audioBuffer = trimAudioBufferRange(state.rawAudioBuffer, state.trimStart, state.trimEnd, audioContext);
@@ -178,19 +189,22 @@ if (maxDbSlider) {
 
 // Export download functions to global scope for onclick handlers
 window.downloadAudio = function() {
+    const name = state.phonemeData?.name || null;
     if (state.audioBuffer) {
         const wavBlob = encodeWAV(state.audioBuffer);
-        downloadAudioFile(wavBlob);
+        downloadAudioFile(wavBlob, name ? `${name}.wav` : null);
     } else {
-        downloadAudioFile(state.currentAudioBlob);
+        downloadAudioFile(state.currentAudioBlob, name ? `${name}.wav` : null);
     }
 };
 
 window.downloadLandmarks = function() {
     const audioContext = getAudioContext();
+    const name = state.phonemeData?.name || null;
     downloadLandmarksFile(
         audioContext?.sampleRate,
-        state.audioBuffer?.duration
+        state.audioBuffer?.duration,
+        name ? `${name}_landmarks.json` : null
     );
 };
 
@@ -204,7 +218,7 @@ window.saveAll = function() {
         return;
     }
 
-    const ts = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const name = state.phonemeData?.name || new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
     function triggerDownload(blob, filename) {
         const url = URL.createObjectURL(blob);
@@ -219,16 +233,16 @@ window.saveAll = function() {
 
     // 1. WAV
     const wavBlob = encodeWAV(state.audioBuffer);
-    triggerDownload(wavBlob, `${ts}_audio.wav`);
+    triggerDownload(wavBlob, `${name}.wav`);
 
     // 2. Waveform PNG
     waveformCanvas.toBlob(blob => {
-        if (blob) triggerDownload(blob, `${ts}_waveform.png`);
+        if (blob) triggerDownload(blob, `${name}_waveform.png`);
     });
 
     // 3. Spectrogram PNG
     spectrogramCanvas.toBlob(blob => {
-        if (blob) triggerDownload(blob, `${ts}_spectrogram.png`);
+        if (blob) triggerDownload(blob, `${name}_spectrogram.png`);
     });
 
     // 4. Landmarks JSON
@@ -242,7 +256,7 @@ window.saveAll = function() {
             landmarks
         };
         const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        triggerDownload(jsonBlob, `${ts}_landmarks.json`);
+        triggerDownload(jsonBlob, `${name}_landmarks.json`);
     }
 };
 

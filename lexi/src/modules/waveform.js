@@ -100,6 +100,69 @@ export function drawTimeDomain(canvas, audioBuffer) {
     ctx.lineWidth = 0.8;
     ctx.stroke();
 
+    // Nose overlay (ch1) — draw behind the combined outline
+    if (audioBuffer.numberOfChannels >= 2) {
+        const noseData = audioBuffer.getChannelData(1);
+        const noseMax = new Float32Array(canvas.width);
+        const noseMin = new Float32Array(canvas.width);
+
+        for (let x = 0; x < canvas.width; x++) {
+            const start = Math.floor(x * segmentWidth);
+            const end = Math.floor((x + 1) * segmentWidth);
+            let mx = -Infinity;
+            let mn = Infinity;
+            for (let i = start; i < end && i < noseData.length; i++) {
+                mx = Math.max(mx, noseData[i]);
+                mn = Math.min(mn, noseData[i]);
+            }
+            noseMax[x] = mx;
+            noseMin[x] = mn;
+        }
+
+        // Upper nose envelope
+        const noseUpper = new Path2D();
+        noseUpper.moveTo(0, yCenter);
+        for (let x = 0; x < canvas.width; x++) {
+            noseUpper.lineTo(x, yCenter - noseMax[x] * verticalScale);
+        }
+        noseUpper.lineTo(canvas.width - 1, yCenter);
+        noseUpper.closePath();
+
+        // Lower nose envelope
+        const noseLower = new Path2D();
+        noseLower.moveTo(0, yCenter);
+        for (let x = 0; x < canvas.width; x++) {
+            noseLower.lineTo(x, yCenter - noseMin[x] * verticalScale);
+        }
+        noseLower.lineTo(canvas.width - 1, yCenter);
+        noseLower.closePath();
+
+        ctx.fillStyle = 'rgba(246, 173, 85, 0.35)';
+        ctx.fill(noseUpper);
+        ctx.fill(noseLower);
+
+        // Nose outline
+        ctx.beginPath();
+        for (let x = 0; x < canvas.width; x++) {
+            const y = yCenter - noseMax[x] * verticalScale;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(246, 173, 85, 0.6)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let x = 0; x < canvas.width; x++) {
+            const y = yCenter - noseMin[x] * verticalScale;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(246, 173, 85, 0.6)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+    }
+
     // Subtle center line
     ctx.beginPath();
     ctx.moveTo(0, yCenter);
