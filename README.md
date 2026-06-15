@@ -5,8 +5,9 @@ articulatory speech synthesizer, extended with an acoustic **landmark** analysis
 module (**LEXI**) and a headless **batch generator** that produces a large synthetic
 speech + landmark dataset.
 
-> 📄 This repository accompanies the paper *«TÍTULO DEL PAPER»* (venue, 2026).
-> <!-- TODO: completar título, autores, venue y DOI/enlace cuando esté disponible. -->
+> 📄 This repository accompanies the paper
+> **"An Acoustic Landmark Database of the English Lexicon via Articulatory Synthesis"** (2026).
+> <!-- TODO: añadir autores, venue y DOI/enlace cuando estén disponibles. -->
 
 It is a cleaned fork of [`zakaton/pink-trombone-demos`](https://github.com/zakaton/pink-trombone-demos)
 by **Zack Qattan**, which builds on **Neil Thapen's** original Pink Trombone.
