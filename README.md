@@ -1,55 +1,94 @@
-# Pink Trombone Demos with LEXI Landmark Integration
+# Pink Trombone Demos — articulatory synthesis, landmark analysis & dataset generation
 
-This repository is a fork of the fantastic work by **Zack Qattan**, providing interactive web-based demos of the Pink Trombone synthesizer. This version extends the original functionality by integrating the **LEXI** module for acoustic and landmark analysis.
+Browser-based demos built on the [Pink Trombone](https://dood.al/pinktrombone/)
+articulatory speech synthesizer, extended with an acoustic **landmark** analysis
+module (**LEXI**) and a headless **batch generator** that produces a large synthetic
+speech + landmark dataset.
 
-## The LEXI Module Addition
+> 📄 This repository accompanies the paper *«TÍTULO DEL PAPER»* (venue, 2026).
+> <!-- TODO: completar título, autores, venue y DOI/enlace cuando esté disponible. -->
 
-The primary addition in this fork is the `lexi` directory and its corresponding web module. It is designed to work in tandem with the `tts` (Text-to-Speech) and `pink-trombone` modules to create a complete analysis pipeline: from text/phoneme input to articulatory synthesis and, finally, to acoustic and landmark visualization.
+It is a cleaned fork of [`zakaton/pink-trombone-demos`](https://github.com/zakaton/pink-trombone-demos)
+by **Zack Qattan**, which builds on **Neil Thapen's** original Pink Trombone.
 
-## How It Works
+## Repository layout
 
-The three modules (`tts`, `pink-trombone`, and `lexi`) are designed to be opened simultaneously in separate browser tabs and work together. The workflow is as follows:
+| Path | What it is |
+|------|------------|
+| `pink-trombone/` | The Pink Trombone synthesizer (real-time vocal-tract animation + audio). |
+| `tts/` | Text / phoneme → timed articulatory **keyframes**, sent to Pink Trombone. |
+| `lexi/` | **L**andmark **EX**traction & **I**nspection: waveform, spectrogram and acoustic landmarks for the synthesized audio. |
+| `batch-generator/` | Headless (Playwright) pipeline that runs the three modules to synthesize word lists → audio + utterance + landmarks. |
+| `src/` | Shared code: phoneme tables (`utils.js`, `utils-v2.js`), Pink Trombone worklet, vendored libs, `english.txt` word list. |
 
-1.  **Input:** In the **TTS** page, you can type an English word or a sequence of phonemes directly.
-2.  **Synthesis & Animation:** When you click "Play", the input is processed and sent to the **Pink Trombone** page. This page synthesizes the audio while displaying a real-time animation of the vocal tract movements.
-3.  **Analysis & Visualization:** As soon as the synthesis finishes, the generated audio and its parameters are passed to the **LEXI** page. This page will automatically update to display:
-    *   The audio **waveform**.
-    *   The corresponding **spectrogram**.
-    *   The algorithmically generated **acoustic landmarks** overlaid on the spectrogram.
-4.  **Data Export:** The LEXI page allows you to download the complete output data, including the `.wav` audio file and a `.json` file containing the precise timing and type of each landmark.
+## 1. Interactive demo (3 modules)
 
-## Getting Started
+The `tts`, `pink-trombone` and `lexi` pages talk to each other through the
+[BroadcastChannel API](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel),
+so they must run from a local web server and be open simultaneously.
 
-To run this demo, you need to use a local web server. This is essential because the different pages communicate with each other, which is typically blocked by browser security policies when opening files directly from your local filesystem. The `live-server` NPM package is a simple and effective way to do this.
+```bash
+git clone https://github.com/MateoCamara/pink-trombone-demos.git
+cd pink-trombone-demos
+npm install -g live-server     # any static server works (Node.js required)
+live-server                    # serves the repo; note the port it prints
+```
 
-**Step-by-step instructions:**
+Open these three pages in separate tabs (port may differ from `8080`):
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/MateoCamara/pink-trombone-demos.git
-    cd pink-trombone-demos
-    ```
+- **TTS input:** `http://127.0.0.1:8080/tts/`
+- **Pink Trombone:** `http://127.0.0.1:8080/pink-trombone/`
+- **LEXI analysis:** `http://127.0.0.1:8080/lexi/`
 
-2.  **Install `live-server`:** If you don't have it, you can install it globally via npm (Node.js is required).
-    ```bash
-    npm install -g live-server
-    ```
+Type a word or phoneme sequence in the TTS page and press *Play*: Pink Trombone
+synthesizes and animates the vocal tract, and LEXI updates with the waveform,
+spectrogram and acoustic landmarks. LEXI can export `audio.wav` and a
+`landmarks.json` (`[{ type, time, name }]`).
 
-3.  **Start the server:** From inside the `pink-trombone-demos` directory, run the command:
-    ```bash
-    live-server
-    ```
-    This will start a local server and should automatically open a browser window.
+## 2. Batch dataset generation
 
-4.  **Open the three modules:** Open the following pages in three separate browser tabs. Your port may vary from `8080`, but `live-server` will tell you which one it's using.
-    *   **TTS Input:** `http://127.0.0.1:8080/tts/`
-    *   **Pink Trombone Animator:** `http://127.0.0.1:8080/pink-trombone/`
-    *   **LEXI Analysis:** `http://127.0.0.1:8080/lexi/`
+`batch-generator/` drives the same three modules **headlessly** with Playwright to
+synthesize whole word lists, exporting per word: the audio (`.wav`), the articulatory
+`utterance` keyframes, and the acoustic `landmarks`.
 
-Now you are ready to use the demo! Simply type into the TTS page and watch the other two pages react.
+```bash
+cd batch-generator
+npm install                      # installs Playwright
+npx playwright install chromium
 
-## Downloadable Outputs
+# Terminal 1 — serve the demo modules (UTF-8 is required for IPA characters):
+node serve.js                    # serves the repo root on http://localhost:8080
 
-For each synthesized word, the LEXI module provides two downloadable files:
--   **`audio.wav`**: A standard WAV file of the synthesized speech.
--   **`landmarks.json`**: A JSON file containing an array of landmark objects, each with its `type`, `time`, and associated `name`.
+# Terminal 2 — generate:
+node index.js --word hello       # single-word smoke test
+node index.js --limit 50         # first 50 dictionary words
+node index.js --voice M --resume # full run, male voice, resumable
+```
+
+**Useful flags** (see `index.js`): `--word`, `--words`, `--words-file`, `--limit`,
+`--start`, `--count`, `--voice {M|F}`, `--browsers N`, `--resume`, `--filter-dict`.
+
+Output is written under `batch-generator/output/` (plus `progress.json` for resume)
+and is **not** versioned — see `.gitignore`. Two synthetic voices are produced:
+`M` (140 Hz, tract length 44) and `F` (220 Hz, tract length 38), at 44.1 kHz mono.
+The full schema is documented in [`batch-generator/dataset_card.md`](batch-generator/dataset_card.md).
+
+### Generated dataset
+
+The full corpus (every English dictionary word, both voices) is published on the
+Hugging Face Hub:
+**[`mcamara/all-words-in-english-with-pink-trombone`](https://huggingface.co/datasets/mcamara/all-words-in-english-with-pink-trombone)**.
+
+```python
+from datasets import load_dataset
+ds = load_dataset("mcamara/all-words-in-english-with-pink-trombone", split="train")
+```
+
+## Credits & license
+
+- **Pink Trombone** (original synthesizer): [Neil Thapen](https://dood.al/pinktrombone/).
+- **Base demos** (fork source): [Zack Qattan](https://github.com/zakaton/pink-trombone-demos).
+- **LEXI module, TTS keyframe generator, batch generator and this cleanup:** Mateo Cámara.
+
+Released under the **MIT License** (see [`LICENSE`](LICENSE)). Upstream components
+retain their original terms.

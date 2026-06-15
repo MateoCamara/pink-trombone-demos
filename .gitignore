@@ -1,12 +1,23 @@
+# OS / editor
 .DS_Store
-TODO.txt
-edge-impulse-standalone.wasm
-/.idea/.gitignore
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/inspectionProfiles/profiles_settings.xml
-/.idea/vcs.xml
-
 desktop.ini
 **/desktop.ini
+.idea/
+.cursor/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Archives / large binaries
 *.7z
+edge-impulse-standalone.wasm
+
+# Batch generator: generated dataset output (published separately, not versioned)
+batch-generator/output/
+batch-generator/website/
+batch-generator/progress*.json
+
+# Scratch
+TODO.txt
